@@ -1,0 +1,134 @@
+\documentclass[14pt,a4paper]{scrreprt}
+
+\include{preambule.inc}
+
+\begin{document}
+
+\include{00-title}
+
+\thispagestyle{empty}
+
+\chapter{Практическое задание}
+
+\section{Задание}
+
+Используя хвостовую рекурсию, разработать эффективную программу, позволяющую:
+\begin{enumerate}
+	\item найти длину списка (по верхнему уровню);
+	\item найти сумму элементов числового списка;
+	\item найти сумму элементов числового списка, стоящих на нечетных позициях исходного списка (нумерация от 0).
+\end{enumerate}
+Убедиться в правильности результатов.
+
+Для одного из вариантов вопроса и одного из заданий составить таблицу, отражающую конкретный порядок работы системы.
+
+\section{Код программы}
+
+\begin{lstlisting}[language=Prolog]
+domains
+
+	integerList = integer*.
+
+predicates
+
+	lengthIter(integerList, integer, integer).
+	length(integerList, integer).
+	
+	listSumIter(integerList, integer, integer).
+	listSum(integerList, integer).
+	
+	listSumOddPoseIter(integerList, integer, integer).
+	listSumOddPose(integerList, integer).
+
+clauses
+
+	lengthIter([], Len, Cnt) :- Len = Cnt, !.
+	lengthIter([_|T], Len, Cnt) :- NewCnt = Cnt + 1,
+		lengthIter(T, Len, NewCnt).
+	length(List, Len) :- lengthIter(List, Len, 0).
+	
+	listSumIter([], Sum, IterSum) :- Sum = IterSum, !.
+	listSumIter([H|T], Sum, IterSum) :- 
+		NewIterSum = IterSum + H, listSumIter(T, Sum, NewIterSum).
+	listSum(List, Sum) :- listSumIter(List, Sum, 0).
+	
+	listSumOddPoseIter([], Sum, IterSum) :- Sum = IterSum, !.
+	listSumOddPoseIter([_, H|T], Sum, IterSum) :- !, 
+		NewIterSum = IterSum + H, listSumOddPoseIter(T, Sum, NewIterSum).
+	listSumOddPoseIter([_|T], Sum, IterSum) :- listSumOddPoseIter(T, Sum, 
+		IterSum).
+	listSumOddPose(List, Sum) :- listSumOddPoseIter(List, Sum, 0).
+
+goal
+
+	%length([7, 1, 4, 8], Len).
+	%listSum([9, 1, 8, 5], Sum).
+	listSumOddPose([9, 1, 8, 5], Sum).
+\end{lstlisting}
+
+\section{Таблицы выполнения программы}
+
+Запрос: length([7, 1, 4, 8], Len).
+\begin{table}[H]
+	\begin{tabular}{|p{0.8cm\small}|p{4.7cm\small}|p{5.7cm\small}|p{4cm\small}|}	
+		\hline
+		№ шага & Состояния резольвенты и вывод: дальнейшие действия (почему?) & Для каких термов запускается алгоритм унификации: T1=T2 и каков результат (подстановка) & Дальнейшие действия: прямой ход или откат (почему и к чему приводит?)\\
+		\hline
+		1 & Резольвента: \begin{itemize}
+			\item length([7, 1, 4, 8], Len)
+		\end{itemize} & length([7, 1, 4, 8], Len) = lengthIter([], Len, Cnt). Унификация неуспешна & Прямой ход, переход к следующему предложению\\
+		\hline
+		2 & ... & ... & ...\\
+		\hline
+		3 & Резольвента: \begin{itemize} \item lengthIter([7, 1, 4, 8], Len, 0) \end{itemize} & length([7, 1, 4, 8], Len) = length(List, Len). Унификация успешна\linebreak \textbf{Подстановка:} \{List=[7, 1, 4, 8], Len=Len\} & Прямой ход, решение цели резольвенты \\
+		\hline
+	\end{tabular}
+\end{table}
+
+\begin{table}[H]
+	\begin{tabular}{|p{0.8cm\small}|p{4.7cm\small}|p{5.7cm\small}|p{4cm\small}|}	
+		\hline
+		№ шага & Состояния резольвенты и вывод: дальнейшие действия (почему?) & Для каких термов запускается алгоритм унификации: T1=T2 и каков результат (подстановка) & Дальнейшие действия: прямой ход или откат (почему и к чему приводит?)\\
+		\hline
+		4 & Резольвента: \begin{itemize} \item lengthIter([7, 1, 4, 8], Len, 0) \end{itemize} & lengthIter([7, 1, 4, 8], Len, 0) = lengthIter([], Len, Cnt). Унификация неуспешна & Прямой ход, решение цели резольвенты \\
+		\hline
+		5 & Резольвента: \begin{itemize} \item NewCnt = 0 + 1, \item lengthIter([1, 4, 8], Len, NewCnt) \end{itemize} & lengthIter([7, 1, 4, 8], Len, 0) = lengthIter([\_|T], Len, Cnt). Унификация успешна\linebreak \textbf{Подстановка:} \{List=[7, 1, 4, 8], Len=Len, T=[1, 4, 8], Len=Len, Cnt=0\} & Прямой ход, решение цели резольвенты \\
+		\hline
+		6 & Резольвента: \begin{itemize} \item lengthIter([1, 4, 8], Len, 1) \end{itemize} & NewCnt = 0 + 1\linebreak \textbf{Подстановка:} \{List=[7, 1, 4, 8], Len=Len, T=[1, 4, 8], Len=Len, Cnt=0, NewCnt=1\} & Прямой ход, решение цели резольвенты\\
+		\hline
+		7 & Резольвента: \begin{itemize} \item lengthIter([1, 4, 8], Len, 1) \end{itemize} & lengthIter([1, 4, 8], Len, 1) = lengthIter([], Len, Cnt). Унификация неуспешна & Прямой ход, переход к следующему предложению\\
+		\hline
+		8 & Резольвента: \begin{itemize} \item NewCnt = 1 + 1, \item lengthIter([4, 8], Len, NewCnt) \end{itemize} & lengthIter([1, 4, 8], Len, 1) = lengthIter([\_|T], Len, Cnt). Унификация успешна\linebreak \textbf{Подстановка:} \{List=[7, 1, 4, 8], Len=Len, T=[1, 4, 8], Len=Len, Cnt=0, T=[4, 8], Len=Len, Cnt=1\} & Прямой ход, решение цели резольвенты \\
+		\hline
+		9 & Резольвента: \begin{itemize} \item lengthIter([4, 8], Len, 2) \end{itemize} & NewCnt = 1 + 1\linebreak \textbf{Подстановка:} \{..., T=[4, 8], Len=Len, Cnt=1, NewCnt=2\} & Прямой ход, решение цели резольвенты \\
+		\hline
+		10 & Резольвента: \begin{itemize} \item lengthIter([4, 8], Len, 2) \end{itemize} & lengthIter([4, 8], Len, 2) = lengthIter([], Len, Cnt). Унификация неуспешна & Прямой ход, переход к следующему предложению\\
+		\hline
+		11 & Резольвента: \begin{itemize} \item NewCnt = 2 + 1, \item lengthIter([8], Len, NewCnt) \end{itemize} & lengthIter([4, 8], Len, 2) = lengthIter([\_|T], Len, Cnt). Унификация успешна\linebreak \textbf{Подстановка:} \{..., NewCnt=2, T=[8], Len=Len, Cnt=2\} & Прямой ход, решение цели резольвенты \\
+		\hline
+		12 & Резольвента: \begin{itemize} \item lengthIter([8], Len, 3) \end{itemize} & NewCnt = 2 + 1\linebreak \textbf{Подстановка:} \{..., T=[8], Len=Len, Cnt=2, NewCnt=3\} & Прямой ход, решение цели резольвенты \\
+		\hline
+	\end{tabular}
+\end{table}
+
+\begin{table}[H]
+	\begin{tabular}{|p{0.8cm\small}|p{4.7cm\small}|p{5.7cm\small}|p{4cm\small}|}	
+		\hline
+		№ шага & Состояния резольвенты и вывод: дальнейшие действия (почему?) & Для каких термов запускается алгоритм унификации: T1=T2 и каков результат (подстановка) & Дальнейшие действия: прямой ход или откат (почему и к чему приводит?)\\
+		\hline
+		13 & Резольвента: \begin{itemize} \item lengthIter([8], Len, 3) \end{itemize} & lengthIter([8], Len, 3) = lengthIter([], Len, Cnt). Унификация неуспешна & Прямой ход, переход к следующему предложению\\
+		\hline
+		14 & Резольвента: \begin{itemize} \item NewCnt = 3 + 1, \item lengthIter([], Len, NewCnt) \end{itemize} & lengthIter([8], Len, 3) = lengthIter([\_|T], Len, Cnt). Унификация успешна\linebreak \textbf{Подстановка:} \{..., NewCnt=3, T=[], Len=Len, Cnt=3\} & Прямой ход, решение цели резольвенты \\
+		\hline
+		15 & Резольвента: \begin{itemize} \item lengthIter([], Len, 4) \end{itemize} & NewCnt = 3 + 1\linebreak \textbf{Подстановка:} \{..., T=[], Len=Len, Cnt=3, NewCnt=4\} & Прямой ход, решение цели резольвенты \\
+		\hline
+		16 & Резольвента: \begin{itemize} \item  Len = 4, \item ! \end{itemize} & lengthIter([], Len, 4) = lengthIter([], Len, Cnt). Унификация успешна\linebreak \textbf{Подстановка:} \{..., Len=Len, Cnt=4,\} & Прямой ход, решение цели резольвенты \\
+		\hline
+		17 & Резольвента: \begin{itemize} \item ! \end{itemize} & Len = 4. Унификация успешна\linebreak \textbf{Подстановка:} \{..., Len=4, Cnt=4,\} & Прямой ход, решение цели резольвенты \\
+		\hline
+		18 & Резольвента: пуста\linebreak \textbf{Вывод:} Len=4 & !. Отсечение 16, 17 & Откат к пункту 16, завершение работы\\
+		\hline
+	\end{tabular}
+\end{table}
+		
+\end{document}

@@ -1,0 +1,165 @@
+\documentclass[14pt,a4paper]{scrreprt}
+
+\include{preambule.inc}
+
+\begin{document}
+
+\include{00-title}
+
+\thispagestyle{empty}
+
+\chapter{Практическое задание}
+
+\section{Задание}
+
+Создать базу знаний <<Предки>>, позволяющую наиболее эффективным способом (за меньшее количество шагов, что обеспечивается меньшим количеством предложений в БЗ -- правил), и используя разные варианты (примеры) одного вопроса, определить (указать, какой вопрос для какого варианта):
+\begin{enumerate}
+	\item по имени субъекта определить всех его бабушек (предки 2-го колена);
+	\item по имени субъекта определить всех его дедушек (предки 2-го колена);
+	\item по имени субъекта определить всех его бабушек и дедушек (предки 2-го колена);
+	\item по имени субъекта определить его бабушку по материнской линии (предки 2-го колена);
+	\item по имени субъекта определить его бабушку и дедушку по материнской линии (предки 2-го колена).
+\end{enumerate}
+Минимизировать количество правил и количество вариантов вопросов. Использовать конъюнктивные правила и простой вопрос.
+
+Для одного из вариантов вопроса и конкретной БЗ составить таблицу, отражающую конкретный порядок работы системы, с объяснениями:
+\begin{itemize}
+	\item очередная проблема на каждом шаге и метод ее решения;
+	\item каково новое текущее состояние резольвенты, как получено;
+	\item какие дальнейшие действий? (Запускается ли алгоритм унификации? Каких термов? Почему этих?);
+	\item вывод по результатам очередного шага и дальнейшие действия.
+\end{itemize}
+Т.к. резольвента хранится в виде стека, то состояние резольвенты требуется отображать в столбик: вершина -- сверху! Новый шаг надо начинать с нового состояния резольвенты!
+
+\section{Код программы}
+
+\begin{lstlisting}[language=Prolog]
+domains
+
+	name, gender = symbol.
+	human = human(name, gender).
+
+predicates
+
+	isParent(human, human).
+	isGrandparent(human, gender, human).
+
+clauses
+
+	isGrandparent(human(GrandName, GrandGender), LineGender, 
+		human(Name, Gender)) :- 
+			isParent(human(GrandName, GrandGender), human(TmpName, 
+			LineGender)), 
+			isParent(human(TmpName, LineGender), human(Name, Gender)).
+	
+	isParent(human("Irina", woman), human("Olga", woman)).
+	isParent(human("Igor", man), human("Olga", woman)).
+	isParent(human("Victor", man), human("Irina", woman)).
+	isParent(human("Svetlana", woman), human("Irina", woman)).
+	isParent(human("Fedor", man), human("Igor", man)).
+	isParent(human("Uliya", woman), human("Igor", man)).
+
+goal
+	%isGrandparent(human(Name, woman), _, human("Olga", woman)).
+	%isGrandparent(human(Name, man), _, human("Olga", woman)).
+	%isGrandparent(Human, _, human("Olga", woman)).
+	%isGrandparent(human(Name, woman), woman, human("Olga", woman)).
+	isGrandparent(Human, woman, human("Olga", woman)).
+\end{lstlisting}
+
+\newpage
+\section{Таблицы выполнения программы}
+
+Запрос для задания 2:
+
+isGrandparent(human(Name, man), \_, human(``Olga'', woman)).
+
+
+\begin{table}[H]
+	\begin{tabular}{|p{0.8cm\small}|p{4.7cm\small}|p{5.7cm\small}|p{4cm\small}|}	
+		\hline
+		№ шага & Состояния резольвенты и вывод: дальнейшие действия (почему?) & Для каких термов запускается алгоритм унификации: T1=T2 и каков результат (подстановка) & Дальнейшие действия: прямой ход или откат (почему и к чему приводит?)\\
+		\hline
+		1 & Резольвента:\begin{itemize}
+			\item isParent(human(
+		TmpName, \_), human(``Olga'', woman)) \item isParent(human(
+		Name, man), human(TmpName, \_))\end{itemize} & isGrandparent(human(Name, man), \_, human(``Olga'', woman)) = isGrandparent(human(
+		GrandName, GrandGender), LineGender, human(Name, Gender)). Унификация успешна\linebreak \textbf{Подстановка:} \{GrandName=Name, GrandGender=man, Name=``Olga'', Gender=woman\} & Прямой ход, приводит к попытке унификации isParent(human(
+		TmpName, \_), human(``Olga'', woman)) и isGrandparent(human(
+		GrandName, GrandGender), LineGender, human(Name, Gender))\\
+		\hline 
+		2 & Резольвента:\begin{itemize} \item isParent(human(
+			TmpName, \_), human(``Olga'', woman)) \item isParent(human(
+			Name, man), human(TmpName, \_))\end{itemize} & isParent(human(TmpName, \_), human(``Olga'', woman)) = isGrandparent(human(
+		GrandName, GrandGender), LineGender, human(Name, Gender)). Унификация неуспешна & Прямой ход, переход к следующему предложению\\
+		\hline
+		3 & Резольвента:\begin{itemize} \item isParent(human(
+			Name, man), human(``Irina'', \_))\end{itemize} & isParent(human(TmpName, \_), human(``Olga'', woman)) = isParent(human(``Irina'', woman), human(``Olga'', woman)). Унификация успешна\linebreak
+		\textbf{Подстановка:} \{GrandName=Name, GrandGender=man, Name=``Olga'', Gender=woman, TempName=``Irina''\} & Прямой ход, попытка унификации isParent(human(
+		Name, man), human(``Irina'', \_))\\
+		\hline
+	\end{tabular}
+\end{table}
+
+\begin{table}[H]
+	\begin{tabular}{|p{0.8cm\small}|p{4.7cm\small}|p{5.7cm\small}|p{4cm\small}|}	
+		\hline
+		№ шага & Состояния резольвенты и вывод: дальнейшие действия (почему?) & Для каких термов запускается алгоритм унификации: T1=T2 и каков результат (подстановка) & Дальнейшие действия: прямой ход или откат (почему и к чему приводит?)\\
+		\hline
+		4 & Резольвента:\begin{itemize} \item isParent(human(
+			Name, man), human(``Irina'', \_))\end{itemize} & isParent(human(
+		Name, man), human(``Irina'', \_)) = isGrandparent(human(
+		GrandName, GrandGender), LineGender, human(Name, Gender)). Унификация неуспешна & Прямой ход, переход к следующему предложению\\
+		\hline
+		5-6 & ... & Унификация неуспешна & ...\\
+		\hline
+		7 & Резольвента: пуста\linebreak \textbf{Вывод:} Name=``Victor'' & isParent(human(
+		Name, man), human(``Irina'', \_)) = isParent(human(``Victor'', man), human(``Irina'', woman)). Унификация успешна\linebreak \textbf{Подстановка:} \{GrandName=``Victor'', GrandGender=man, Name=``Olga'', Gender=woman, TempName=``Irina''\} & Откат, переход к следующему предложению\\
+		\hline
+		8-9 & Резольвента: \begin{itemize} \item isParent(human(
+			Name, man), human(``Irina'', \_))\end{itemize} & Унификация неуспешна & Прямой ход, переход к следующему предложению\\
+		\hline
+		10 & Резольвента:\begin{itemize} \item isParent(human(
+			TmpName, \_), human(``Olga'', woman)) \item isParent(human(
+			Name, man), human(TmpName, \_))\end{itemize} & isParent(human(
+		Name, man), human(``Irina'', \_)) = isParent(human(``Uliya'', woman), human(``Igor'', man)). Унификация неуспешна & Откат, достижение конца БЗ, переход к следющему предложению относительно 3\\
+		\hline
+		11 & Резольвента:\begin{itemize} \item isParent(human(
+			Name, man), human(``Igor'', \_))\end{itemize} & isParent(human(TmpName, \_), human(``Olga'', woman)) = isParent(human(``Igor'', man), human(``Olga'', woman)). Унификация успешна\linebreak
+		\textbf{Подстановка:} \{GrandName=Name, GrandGender=man, Name=``Olga'', Gender=woman, TempName=``Igor''\} & Прямой ход, попытка унификации isParent(human(
+		Name, man), human(``Igor'', \_))\\
+		\hline
+	\end{tabular}
+\end{table}
+
+\begin{table}[H]
+	\begin{tabular}{|p{0.8cm\small}|p{4.7cm\small}|p{5.7cm\small}|p{4cm\small}|}	
+		\hline
+		№ шага & Состояния резольвенты и вывод: дальнейшие действия (почему?) & Для каких термов запускается алгоритм унификации: T1=T2 и каков результат (подстановка) & Дальнейшие действия: прямой ход или откат (почему и к чему приводит?)\\
+		\hline
+		12 & Резольвента:\begin{itemize} \item isParent(human(
+			Name, man), human(``Igor'', \_))\end{itemize} & isParent(human(
+		Name, man), human(``Igor'', \_)) = isGrandparent(human(
+		GrandName, GrandGender), LineGender, human(Name, Gender)). Унификация неуспешна & Прямой ход, переход к следующему предложению\\
+		\hline
+		13-17 & ... & Унификация неуспешна & ... \\
+		\hline
+		18 & Резольвента: пуста\linebreak \textbf{Вывод:} Name=``Fedor'' & isParent(human(
+		Name, man), human(``Igor'', \_)) = isParent(human(``Fedor'', man), human(``Igor'', man)). Унификация успешна\linebreak \textbf{Подстановка:} \{GrandName=``Fedor'', GrandGender=man, Name=``Olga'', Gender=woman, TempName=``Igor''\} & Откат, переход к следующему предложению\\
+		\hline
+		19 & Резольвента:\begin{itemize} \item isParent(human(
+			Name, man), human(``Igor'', \_))\end{itemize} & isParent(human(
+		Name, man), human(``Igor'', \_)) = isParent(human(``Uliya'', woman), human(``Igor'', man)). Унификация неуспешна & Откат, достижение конца БЗ, переход к следующему предложению относительно 11\\
+		\hline
+		20 & Резольвента:\begin{itemize} \item isParent(human(
+			TmpName, \_), human(``Olga'', woman)) \item isParent(human(
+			Name, man), human(TmpName, \_))\end{itemize} & isParent(human(TmpName, \_), human(``Olga'', woman)) = isParent(human(``Victor'', man), human(``Irina'', woman)). Унификация неуспешна & Прямой ход, переход к следующему предложению\\
+		\hline
+		21-23 & ... & Унификация неуспешна & Откат, достижение конца БЗ, переход к следующему предложению относительно 1\\
+		\hline
+		24-29 & Резольвента: пуста & isGrandparent(human(Name, man), \_, human(``Olga'', woman)) = isParent(...). Унификация неуспешна & Откат, достижение конца БЗ, завершение работы\\
+		\hline
+	\end{tabular}
+\end{table}
+		
+\end{document}

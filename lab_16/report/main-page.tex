@@ -1,0 +1,249 @@
+\documentclass[14pt,a4paper]{scrreprt}
+
+\include{preambule.inc}
+
+\begin{document}
+
+\include{00-title}
+
+\thispagestyle{empty}
+
+\chapter{Практическое задание}
+
+\section{Задание}
+
+Используя хвостовую рекурсию, разработать программу, позволяющую найти:
+\begin{itemize}
+	\item $n!$;
+	\item $n$-е число Фибоначчи.
+\end{itemize}
+Убедиться в правильности результатов.
+
+Для одного из вариантов вопроса и каждого задания составить таблицу, отражающую конкретный порядок работы системы:
+
+\section{Код программы}
+
+\begin{lstlisting}[language=Prolog]
+predicates
+
+	factorialIter(integer, integer, integer).
+	factorial(integer, integer).
+	fibonIter(integer, integer, integer, integer).
+	fibon(integer, integer).
+
+clauses
+
+	factorialIter(N, Res, IterRes) :- N = 0, !, Res = IterRes.
+	factorialIter(N, Res, IterRes) :- N > 0, NewN = N - 1, 
+		NewIterRes = N * IterRes,factorialIter(NewN, Res, NewIterRes). 
+	factorial(N, Res) :- factorialIter(N, Res, 1).
+	
+	fibonIter(N, Res, FNum, _) :- N = 0, !, Res = FNum.
+	fibonIter(N, Res, _, SNum) :- N = 1, !, Res = SNum.
+	fibonIter(N, Res, FNum, SNum) :- N > 1, NewN = N - 1, 
+		NewFNum = SNum, NewSNUm = FNum + SNum, 
+	fibonIter(NewN, Res, NewFNum, NewSNum).
+	fibon(N, Res) :- fibonIter(N, Res, 0, 1).
+
+goal
+
+	factorial(4, Res).
+	%fibon(7, Res).
+\end{lstlisting}
+
+\section{Таблицы выполнения программы}
+
+Запрос для задания factorial(3, Res).
+\begin{table}[H]
+	\begin{tabular}{|p{0.8cm\small}|p{4.7cm\small}|p{5.7cm\small}|p{4cm\small}|}	
+		\hline
+		№ шага & Состояния резольвенты и вывод: дальнейшие действия (почему?) & Для каких термов запускается алгоритм унификации: T1=T2 и каков результат (подстановка) & Дальнейшие действия: прямой ход или откат (почему и к чему приводит?)\\
+		\hline
+		1 & Резольвента:\begin{itemize} \item factorial(3, Res)  \end{itemize} & factorial(3, Res) = factorialIter(N, Res, IterRes). Унификация неуспешна & Прямой ход, переход к следующему предложению \\
+		\hline
+		2 & ... & ... & ...\\
+		\hline
+		3 & Резольвента:\begin{itemize} \item factorialIter(3, Res, 1) \end{itemize} & factorial(3, Res) = factorial(N, Res). Унификация успешна\linebreak \textbf{Подстановка:} \{N=3, Res=Res\} & Прямой ход, решение цели резольвенты \\
+		\hline
+		4 & Резольвента:\begin{itemize} \item  3 = 0, \item !, \item Res = 1, \item ! \end{itemize} & factorialIter(3, Res, 1) = factorialIter(N, Res, IterRes). Унификация успешна\linebreak \textbf{Подстановка:} \{N=3, Res=Res, IterRes=1\} & Прямой ход, решение цели резольвенты\\
+		\hline
+		5 & Резольвента:\begin{itemize} \item !, \item Res = 1, \item ! \end{itemize} & 3 = 0. Ложь & Откат, переход к следующему шагу относительно 4\\
+		\hline
+	\end{tabular}
+\end{table}
+
+\begin{table}[H]
+	\begin{tabular}{|p{0.8cm\small}|p{4.7cm\small}|p{5.7cm\small}|p{4cm\small}|}	
+		\hline
+		№ шага & Состояния резольвенты и вывод: дальнейшие действия (почему?) & Для каких термов запускается алгоритм унификации: T1=T2 и каков результат (подстановка) & Дальнейшие действия: прямой ход или откат (почему и к чему приводит?)\\
+		\hline
+		6 & Резольвента:\begin{itemize} \item 3 > 0, \item NewN = 3 - 1, 
+			\item NewIterRes = 3 * 1,\item factorialIter(NewN, Res, NewIterRes) \end{itemize} & factorialIter(3, Res, 1) = factorialIter(N, Res, IterRes). Унификация успешна\linebreak \textbf{Подстановка:} \{N=3, Res=Res, IterRes=1\} & Прямой ход, решение цели резольвенты\\
+		\hline
+		7 & Резольвента:\begin{itemize} \item NewN = 3 - 1, 
+		\item NewIterRes = 3 * 1,\item factorialIter(NewN, Res, NewIterRes) \end{itemize} & 3 > 0. Правда & Прямой ход, решение цели резольвенты\\
+	 	\hline
+	 	8 & Резольвента:\begin{itemize} \item NewIterRes = 3 * 1,\item factorialIter(2, Res, NewIterRes) \end{itemize} & NewN = 3 - 1.\linebreak \textbf{Подстановка:} \{N=3, Res=Res, IterRes=1, NewN=2\} & Прямой ход, решение цели резольвенты\\
+	 	\hline
+	 	9 & Резольвента:\begin{itemize} \item factorialIter(2, Res, 3) \end{itemize} & NewIterRes = 3 * 1.\linebreak \textbf{Подстановка:} \{N=3, Res=Res, IterRes=1, NewN=2, NewIterRes=3\} & Прямой ход, решение цели резольвенты\\
+		\hline
+		10 & Резольвента:\begin{itemize} \item  2 = 0, \item !, \item Res = 3, \item ! \end{itemize} & factorialIter(2, Res, 3) = factorialIter(N, Res, IterRes). Унификация успешна\linebreak \textbf{Подстановка:} \{N=3, Res=Res, IterRes=1, NewN=2, NewIterRes=3, N=2, Res=Res, IterRes=3\} & Прямой ход, решение цели резольвенты\\
+		\hline
+	\end{tabular}
+\end{table}
+
+\begin{table}[H]
+	\begin{tabular}{|p{0.8cm\small}|p{4.7cm\small}|p{5.7cm\small}|p{4cm\small}|}	
+		\hline
+		№ шага & Состояния резольвенты и вывод: дальнейшие действия (почему?) & Для каких термов запускается алгоритм унификации: T1=T2 и каков результат (подстановка) & Дальнейшие действия: прямой ход или откат (почему и к чему приводит?)\\
+		\hline
+		11 & Резольвента:\begin{itemize}\item !, \item Res = 3, \item ! \end{itemize} & 2 = 0. Ложь & Откат, переход к следующему шагу относительно 10\\
+		\hline
+		12 & Резольвента:\begin{itemize} \item 2 > 0, \item NewN = 2 - 1, 
+		\item NewIterRes = 2 * 3,\item factorialIter(NewN, Res, NewIterRes)\end{itemize} & factorialIter(2, Res, 3) = factorialIter(N, Res, IterRes). Унификация успешна\linebreak \textbf{Подстановка:} \{N=3, Res=Res, IterRes=1, NewN=2, NewIterRes=3, N=2, Res=Res, IterRes=3\} & Прямой ход, решение цели резольвенты\\
+		\hline
+		13 & Резольвента:\begin{itemize} \item NewN = 2 - 1, 
+			\item NewIterRes = 2 * 3,\item factorialIter(NewN, Res, NewIterRes)\end{itemize} & 2 > 0. Правда & Прямой ход, решение цели резольвенты\\
+		\hline
+		14 & Резольвента:\begin{itemize} \item NewIterRes = 2 * 3,\item factorialIter(1, Res, NewIterRes)\end{itemize} & NewN = 2 - 1.\linebreak \textbf{Подстановка:} \{N=3, Res=Res, IterRes=1, NewN=2, NewIterRes=3, N=2, Res=Res, IterRes=3, NewN=1\} & Прямой ход, решение цели резольвенты\\
+		\hline
+		15 & Резольвента:\begin{itemize} \item factorialIter(1, Res, 6)\end{itemize} & NewIterRes = 2 * 3.\linebreak \textbf{Подстановка:} \{N=3, Res=Res, IterRes=1, NewN=2, NewIterRes=3, N=2, Res=Res, IterRes=3, NewN=1, NewIterRes=6\} & Прямой ход, решение цели резольвенты\\
+		\hline
+	\end{tabular}
+\end{table}
+
+\begin{table}[H]
+	\begin{tabular}{|p{0.8cm\small}|p{4.7cm\small}|p{5.7cm\small}|p{4cm\small}|}	
+		\hline
+		№ шага & Состояния резольвенты и вывод: дальнейшие действия (почему?) & Для каких термов запускается алгоритм унификации: T1=T2 и каков результат (подстановка) & Дальнейшие действия: прямой ход или откат (почему и к чему приводит?)\\
+		\hline
+		16 & Резольвента:\begin{itemize} \item 1 = 0, \item !, \item Res = 6, \item ! \end{itemize} & factorialIter(1, Res, 6) = factorialIter(N, Res, IterRes). Унификация успешна\linebreak \textbf{Подстановка:} \{..., NewN=1, NewIterRes=6, N=1, Res=Res, IterRes=6\} & Прямой ход, решение цели резольвенты\\
+		\hline
+		17 & Резольвента:\begin{itemize} \item !, \item Res = 6, \item ! \end{itemize} & 1 = 0. Ложь & Откат, переход к следующему предложению относительно 16\\
+		\hline
+		18 & Резольвента:\begin{itemize} \item 1 > 0, \item NewN = 1 - 1, 
+		\item NewIterRes = 1 * 6,\item factorialIter(NewN, Res, NewIterRes) \end{itemize} & factorialIter(1, Res, 6) = factorialIter(N, Res, IterRes). Унификация успешна\linebreak \textbf{Подстановка:} \{..., NewN=1, NewIterRes=6, N=1, Res=Res, IterRes=6\} & Прямой ход, решение цели резольвенты\\
+		\hline
+		19 & Резольвента:\begin{itemize} \item NewN = 1 - 1, 
+		\item NewIterRes = 1 * 6,\item factorialIter(NewN, Res, NewIterRes) \end{itemize} & 1 > 0. Правда & Прямой ход, решение цели резольвенты\\
+		\hline
+		20 & Резольвента:\begin{itemize} \item NewIterRes = 1 * 6,\item factorialIter(0, Res, NewIterRes) \end{itemize} & NewN = 1 - 1.\linebreak \textbf{Подстановка:} \{..., NewIterRes=6, N=1, Res=Res, IterRes=6, NewN=0\} & Прямой ход, решение цели резольвенты\\
+		\hline
+	\end{tabular}
+\end{table}
+
+
+\begin{table}[H]
+	\begin{tabular}{|p{0.8cm\small}|p{4.7cm\small}|p{5.7cm\small}|p{4cm\small}|}	
+		\hline
+		№ шага & Состояния резольвенты и вывод: дальнейшие действия (почему?) & Для каких термов запускается алгоритм унификации: T1=T2 и каков результат (подстановка) & Дальнейшие действия: прямой ход или откат (почему и к чему приводит?)\\
+		\hline
+		21 & Резольвента:\begin{itemize} \item factorialIter(0, Res, 6) \end{itemize} & NewIterRes = 1 * 6.\linebreak \textbf{Подстановка:} \{..., N=1, Res=Res, IterRes=6, NewN=0, NewIterRes=6\} & Прямой ход, решение цели резольвенты\\
+		\hline
+		22 & Резольвента:\begin{itemize} \item 0 = 0, \item !, \item Res = 6, \item ! \end{itemize} & factorialIter(0, Res, 6) = factorialIter(N, Res, IterRes). Унификация успешна\linebreak \textbf{Подстановка:} \{..., NewN=1, NewIterRes=6, N=1, Res=Res, IterRes=6, N=0, Res=Res, IterRes=6\} & Прямой ход, решение цели резольвенты\\
+		\hline
+		23 & Резольвента:\begin{itemize} \item !, \item Res = 6 ,\item \end{itemize} & 0 = 0. Правда & Прямой ход, решение цели резольвенты\\
+		\hline
+		24 & Резольвента:\begin{itemize} \item Res = 6, \item ! \end{itemize} & !. Отсечение 22, 23 & Прямой ход, решение цели резольвенты\\
+		\hline
+		25 & Резольвента:\begin{itemize} \item ! \end{itemize} & Res = 6.\linebreak \textbf{Подстановка:} \{..., N=0, Res=6, IterRes=6\} & Прямой ход, решение цели резольвенты\\
+		\hline
+		26 & Резольвента: пуста\linebreak \textbf{Вывод:} Res=6 & !. Отсечение 22-25 & Откат к пункту 22, завершение работы \\
+		\hline
+	\end{tabular}
+\end{table}
+
+Запрос для задания fibon(3, Res).
+\begin{table}[H]
+	\begin{tabular}{|p{0.8cm\small}|p{4.7cm\small}|p{5.7cm\small}|p{4cm\small}|}	
+		\hline
+		№ шага & Состояния резольвенты и вывод: дальнейшие действия (почему?) & Для каких термов запускается алгоритм унификации: T1=T2 и каков результат (подстановка) & Дальнейшие действия: прямой ход или откат (почему и к чему приводит?)\\
+		\hline
+		1 & Резольвента:\begin{itemize} \item fibon(3, Res) \end{itemize} & fibon(3, Res) = factorialIter(N, Res, IterRes). Унификация неуспешна & Прямой ход, переход к следующему предложению \\
+		\hline
+		2-6 & ... & ... & ...\\
+		\hline
+	\end{tabular}
+\end{table}
+
+\begin{table}[H]
+	\begin{tabular}{|p{0.8cm\small}|p{4.7cm\small}|p{5.7cm\small}|p{4cm\small}|}	
+		\hline
+		№ шага & Состояния резольвенты и вывод: дальнейшие действия (почему?) & Для каких термов запускается алгоритм унификации: T1=T2 и каков результат (подстановка) & Дальнейшие действия: прямой ход или откат (почему и к чему приводит?)\\
+		\hline
+		7 & Резольвента:\begin{itemize} \item fibonIter(3, Res, 0, 1) \end{itemize} & fibon(3, Res) = fibon(N, Res).Унификация успешна\linebreak \textbf{Подстановка:} \{N=3, Res=Res\} & Прямой ход, решение цели резольвенты\\
+		\hline
+		8 & Резольвента:\begin{itemize} \item fibonIter(3, Res, 0, 1) \end{itemize} & fibonIter(3, Res, 0, 1) = factorialIter(N, Res, IterRes). Унификация неуспешна & Прямой ход, переход к следующему предложению \\
+		\hline
+		9-10 & ... & ... & ...\\
+		\hline
+		11 & Резольвента:\begin{itemize} \item 3 = 0, \item !, \item Res = 0, \item ! \end{itemize} & fibonIter(3, Res, 0, 1) = fibonIter(N, Res, FNum, \_).Унификация успешна\linebreak \textbf{Подстановка:} \{N=3, Res=Res, N=3, Res=Res, FNum=0\} & Прямой ход, решение цели резольвенты\\
+		\hline
+		12 & Резольвента:\begin{itemize} \item !, \item Res = 0, \item ! \end{itemize} & 3 = 0. Ложь & Откат, переход к следующему предложению относительно 11\\
+		\hline
+		13 & Резольвента:\begin{itemize} \item 3 = 1, \item !, \item Res = 1, \item ! \end{itemize} & fibonIter(3, Res, 0, 1) = fibonIter(N, Res, \_, SNum).Унификация успешна\linebreak \textbf{Подстановка:} \{N=3, Res=Res, N=3, Res=Res, SNum=1\} & Прямой ход, решение цели резольвенты\\
+		\hline
+		14 & Резольвента:\begin{itemize} \item !, \item Res = 1, \item ! \end{itemize} & 3 = 1. Ложь & Откат, переход к следующему предложению относительно 13\\
+		\hline
+	\end{tabular}
+\end{table}
+
+\begin{table}[H]
+	\begin{tabular}{|p{0.8cm\small}|p{4.7cm\small}|p{5.7cm\small}|p{4cm\small}|}	
+		\hline
+		№ шага & Состояния резольвенты и вывод: дальнейшие действия (почему?) & Для каких термов запускается алгоритм унификации: T1=T2 и каков результат (подстановка) & Дальнейшие действия: прямой ход или откат (почему и к чему приводит?)\\
+		\hline
+		15 & Резольвента:\begin{itemize} \item 3 > 1, \item NewN = 3 - 1, \item NewFNum = 1, \item NewSNUm = 0 + 1, \item fibonIter(NewN, Res, NewFNum, NewSNum) \end{itemize} & fibonIter(3, Res, 0, 1) = fibonIter(N, Res, FNum, SNum).Унификация успешна\linebreak \textbf{Подстановка:} \{N=3, Res=Res, N=3, Res=Res, FNum=0, SNum=1\} & Прямой ход, решение цели резольвенты\\
+		\hline
+		16 & Резольвента:\begin{itemize} \item NewN = 3 - 1, \item NewFNum = 1, \item NewSNUm = 0 + 1, \item fibonIter(NewN, Res, NewFNum, NewSNum) \end{itemize} & 3 > 1. Правда & Прямой ход, решение цели резольвенты\\
+		\hline
+		17 & Резольвента:\begin{itemize} \item NewFNum = 1, \item NewSNUm = 0 + 1, \item fibonIter(2, Res, NewFNum, NewSNum) \end{itemize} & NewN = 3 - 1\linebreak \textbf{Подстановка:} \{N=3, Res=Res, N=3, Res=Res, FNum=0, SNum=1, NewN=2\} & Прямой ход, решение цели резольвенты\\
+		\hline
+		18 & Резольвента:\begin{itemize} \item NewSNUm = 0 + 1, \item fibonIter(2, Res, 1, NewSNum) \end{itemize} & NewFNum = 1\linebreak \textbf{Подстановка:} \{N=3, Res=Res, N=3, Res=Res, FNum=0, SNum=1, NewN=2, NewFNum=1\} & Прямой ход, решение цели резольвенты\\
+		\hline
+		19 & Резольвента:\begin{itemize} \item fibonIter(2, Res, 1, 1) \end{itemize} & NewSNum = 0 + 1\linebreak \textbf{Подстановка:} \{N=3, Res=Res, N=3, Res=Res, FNum=0, SNum=1, NewN=2, NewFNum=1, NewSNum=1\} & Прямой ход, решение цели резольвенты\\
+		\hline
+	\end{tabular}
+\end{table}
+
+\begin{table}[H]
+	\begin{tabular}{|p{0.8cm\small}|p{4.7cm\small}|p{5.7cm\small}|p{4cm\small}|}	
+		\hline
+		№ шага & Состояния резольвенты и вывод: дальнейшие действия (почему?) & Для каких термов запускается алгоритм унификации: T1=T2 и каков результат (подстановка) & Дальнейшие действия: прямой ход или откат (почему и к чему приводит?)\\
+		\hline
+		20-26 & Резольвента:\begin{itemize} \item fibonIter(2, Res, 1, 1) \end{itemize} & Аналогично пунктам 8-14 & \\
+		\hline
+		27 & Резольвента:\begin{itemize} \item 2 > 1, \item NewN = 2 - 1, \item NewFNum = 1, \item NewSNUm = 1 + 1, \item fibonIter(NewN, Res, NewFNum, NewSNum)\end{itemize}  & fibonIter(2, Res, 1, 1) = fibonIter(N, Res, FNum, SNum). Унификация успешна\linebreak \textbf{Подстановка:} \{N=3, Res=Res, N=3, Res=Res, FNum=0, SNum=1, NewN=2, NewFNum=1, NewSNum=1, N=2, Res=Res, FNum=1, SNum=1\} & Прямой ход, решение цели резольвенты\\
+		\hline
+		28 & Резольвента:\begin{itemize} \item NewN = 2 - 1, \item NewFNum = 1, \item NewSNUm = 1 + 1, \item fibonIter(NewN, Res, NewFNum, NewSNum)\end{itemize} & 2 > 1. Правда & Прямой ход, решение цели резольвенты\\
+		\hline
+		29 & Резольвента:\begin{itemize} \item NewFNum = 1, \item NewSNUm = 1 + 1, \item fibonIter(1, Res, NewFNum, NewSNum)\end{itemize} & NewN = 2 - 1\linebreak \textbf{Подстановка:} \{N=3, Res=Res, N=3, Res=Res, FNum=0, SNum=1, NewN=2, NewFNum=1, NewSNum=1, N=2, Res=Res, FNum=1, SNum=1, NewN=1\} & Прямой ход, решение цели резольвенты\\
+		\hline
+		30 & Резольвента:\begin{itemize} \item NewSNUm = 1 + 1, \item fibonIter(1, Res, 1, NewSNum)\end{itemize} & NewFNum = 1\linebreak \textbf{Подстановка:} \{..., N=2, Res=Res, FNum=1, SNum=1, NewN=1, NewFNum=1\} & Прямой ход, решение цели резольвенты\\
+		\hline
+	\end{tabular}
+\end{table}
+
+\begin{table}[H]
+	\begin{tabular}{|p{0.8cm\small}|p{4.7cm\small}|p{5.7cm\small}|p{4cm\small}|}	
+		\hline
+		№ шага & Состояния резольвенты и вывод: дальнейшие действия (почему?) & Для каких термов запускается алгоритм унификации: T1=T2 и каков результат (подстановка) & Дальнейшие действия: прямой ход или откат (почему и к чему приводит?)\\
+		\hline
+		31 & Резольвента:\begin{itemize} \item fibonIter(1, Res, 1, 2)\end{itemize} & NewSNUm = 1 + 1\linebreak \textbf{Подстановка:} \{..., N=2, Res=Res, FNum=1, SNum=1, NewN=1, NewFNum=1, NewSNum=2\} & Прямой ход, решение цели резольвенты\\
+		\hline
+		32-36 & Резольвента:\begin{itemize} \item fibonIter(1, Res, 1, 2)\end{itemize} & Аналогично пунктам 8-12 & \\
+		\hline
+		37 & Резольвента:\begin{itemize} \item 1 = 1, \item !, \item Res = 2, \item !\end{itemize} & fibonIter(1, Res, 1, 2) = fibonIter(N, Res, \_, SNum). Унификация успешна\linebreak \textbf{Подстановка:} \{..., N=2, Res=Res, FNum=1, SNum=1, NewN=1, NewFNum=1, NewSNum=2, N=1, Res=Res, SNum=2\} & Прямой ход, решение цели резольвенты\\
+		\hline
+		38 & Резольвента:\begin{itemize} \item !, \item Res = 2, \item !\end{itemize} & 1 = 1. Правда & Прямой ход, решение цели резольвенты\\
+		\hline
+		39 & Резольвента:\begin{itemize} \item Res = 2, \item !\end{itemize} & !. Отсечение 37, 38 & Прямой ход, решение цели резольвенты\\
+		\hline
+		40 & Резольвента:\begin{itemize} \item !\end{itemize} & Res = 2\linebreak \textbf{Подстановка:} \{..., N=2, Res=2, FNum=1, SNum=1, NewN=1, NewFNum=1, NewSNum=2\} & Прямой ход, решение цели резольвенты\\
+		\hline
+		41 & Резольвента: пуста\linebreak \textbf{Вывод:} Res=2 & !. Отсечение 37-40 & Откат к пункту 37, завершение работы\\
+		\hline
+	\end{tabular}
+\end{table}
+		
+\end{document}

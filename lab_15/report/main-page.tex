@@ -1,0 +1,163 @@
+\documentclass[14pt,a4paper]{scrreprt}
+
+\include{preambule.inc}
+
+\begin{document}
+
+\include{00-title}
+
+\thispagestyle{empty}
+
+\chapter{Практическое задание}
+
+\section{Задание}
+
+В одной программе написать правила, позволяющие найти:
+\begin{enumerate}
+	\item Максимум из двух чисел:
+	\begin{itemize}
+		\item без использования отсечения;
+		\item с использованием отсечения;
+	\end{itemize}
+	\item Максимум из трех чисел:
+	\begin{itemize}
+		\item без использования отсечения;
+		\item с использованием отсечения.
+	\end{itemize}
+\end{enumerate}
+Убедиться в правильности результатов.
+
+Для каждого случая пункта 2 обосновать необходимость всех условий тела. 
+
+Для одного из вариантов вопроса и каждого варианта задания 2 составить таблицу, отражающую конкретный порядок работы системы. Т.к. резольвента хранится в виде стека, то состояние резольвенты требуется отображать в столбик: вершина -- сверху! Новый шаг нужно начинать с нового состояния резольвенты. 
+
+\section{Код программы}
+
+\begin{lstlisting}[language=Prolog]
+domains
+
+	num = integer.
+
+predicates
+	
+	maxOfTwo(num, num, num).
+	maxOfTwoCut(num, num, num).
+	maxOfThree(num, num, num, num).
+	maxOfThreeCut(num, num, num, num).
+
+clauses
+
+	maxOfTwo(Num1, Num2, Num1) :- Num1 >= Num2.
+	maxOfTwo(Num1, Num2, Num2) :- Num2 >= Num1.
+	
+	maxOfThree(Num1, Num2, Num3, Num1) :- Num1 >= Num2, Num1 >= Num3.
+	maxOfThree(Num1, Num2, Num3, Num2) :- Num2 >= Num1, Num2 >= Num3.
+	maxOfThree(Num1, Num2, Num3, Num3) :- Num3 >= Num1, Num3 >= Num2.
+	
+	maxOfTwoCut(Num1, Num2, Num1) :- Num1 >= Num2, !.
+	maxOfTwoCut(_, Num2, Num2).
+	
+	maxOfThreeCut(Num1, Num2, Num3, Num1) :- Num1 >= Num2, Num1 >= Num3, !.
+	maxOfThreeCut(_, Num2, Num3, Num2) :- Num2 >= Num3, !.
+	maxOfThreeCut(_, _, Num3, Num3).
+
+goal
+
+	%maxOfTwo(1, 2, Max).
+	%maxOfTwo(2, 1, Max).
+	%maxOfTwo(2, 2, Max).
+	%maxOfTwoCut(1, 2, Max).
+	%maxOfTwoCut(2, 1, Max).
+	%maxOfTwoCut(2, 2, Max).
+	%maxOfThree(1, 2, 3, Max).
+	%maxOfThree(1, 3, 2, Max).
+	%maxOfThree(3, 2, 1, Max).
+	%maxOfThree(3, 2, 3, Max).
+	%maxOfThreeCut(1, 2, 3, Max).
+	%maxOfThreeCut(1, 3, 2, Max).
+	%maxOfThreeCut(3, 2, 1, Max).
+	maxOfThreeCut(3, 2, 3, Max).
+\end{lstlisting}
+
+\newpage
+\section{Таблицы выполнения программы}
+
+Запрос для задания 2.a:
+
+maxOfThree(1, 3, 2, Max).
+
+\begin{table}[H]
+	\begin{tabular}{|p{0.8cm\small}|p{4.7cm\small}|p{5.7cm\small}|p{4cm\small}|}	
+		\hline
+		№ шага & Состояния резольвенты и вывод: дальнейшие действия (почему?) & Для каких термов запускается алгоритм унификации: T1=T2 и каков результат (подстановка) & Дальнейшие действия: прямой ход или откат (почему и к чему приводит?)\\
+		\hline
+		1 & Резольвента:\begin{itemize} \item maxOfThree(1, 3, 2, Max) \end{itemize} & maxOfThree(1, 3, 2, Max) = maxOfTwo(Num1, Num2, Num1). Унификация неуспешна & Прямой ход, переход к следующему приложению\\
+		\hline
+		2 & ... & ... & ... \\
+		\hline
+		3 & Резольвента:\begin{itemize} \item 1 >= 2, \item 1 >= 3 \end{itemize}& maxOfThree(1, 3, 2, Max) = maxOfThree(Num1, Num2, Num3, Num1). Унификация успешна\linebreak \textbf{Подстановка:} \{Num1=1, Num2=3, Num3=2, Max=Num1\} & Прямой ход, решение цели резольвенты (1 >= 2) \\
+		\hline
+		4 & Резольвента:\begin{itemize}\item maxOfThree(1, 3, 2, Max) \end{itemize}& 1 >= 2. Ложь & Откат, переход к следующему шагу относительно 3\\
+		\hline
+		5 & Резольвента:\begin{itemize} \item 3 >= 2, \item 3 >= 1 \end{itemize} & maxOfThree(1, 3, 2, Max) = maxOfThree(Num1, Num2, Num3, Num2). Унификация успешна\linebreak \textbf{Подстановка:} \{Num1=1, Num2=3, Num3=2, Max=Num2\} & Прямой ход, решение цели резольвенты (3 >= 2) \\
+		\hline
+		6 & Резольвента:\begin{itemize}\item 3 >= 1 \end{itemize} & 3 >= 2. Правда & Прямой ход, решение цели резольвенты (3 >= 1)\\
+		\hline
+		7 & Резольвента: пуста\linebreak\textbf{Вывод:} Max=3 & 3 >= 1. Правда\linebreak \textbf{Подстановка:} \{Num1=1, Num2=3, Num3=2, Max=3\} & Откат, переход к следующему шагу относительно 5\\
+		\hline
+		8 & Резольвента:\begin{itemize} \item 2 >= 3, \item 2 >= 1 \end{itemize} & maxOfThree(1, 3, 2, Max) = maxOfThree(Num1, Num2, Num3, Num3). Унификация успешна\linebreak \textbf{Подстановка:} \{Num1=1, Num2=3, Num3=2, Max=Num3\} & Прямой ход, решение цели резольвенты (2 >= 3) \\
+		\hline
+	\end{tabular}
+\end{table}
+
+\begin{table}[H]
+	\begin{tabular}{|p{0.8cm\small}|p{4.7cm\small}|p{5.7cm\small}|p{4cm\small}|}	
+		\hline
+		№ шага & Состояния резольвенты и вывод: дальнейшие действия (почему?) & Для каких термов запускается алгоритм унификации: T1=T2 и каков результат (подстановка) & Дальнейшие действия: прямой ход или откат (почему и к чему приводит?)\\
+		\hline
+		9 & Резольвента:\begin{itemize}\item 2 >= 1 \end{itemize} & 2 >= 1. Ложь & Откат, переход к следующему шагу относительно 8\\
+		\hline
+		10 & Резольвента:\begin{itemize}\item maxOfThree(1, 3, 2, Max) \end{itemize}& maxOfThree(1, 3, 2, Max) = maxOfTwoCut(Num1, Num2, Num1). Унификация неуспешна & Прямой ход, переход к следующему предложению\\
+		\hline
+		11-14 & Резольвента:\begin{itemize}\item maxOfThree(1, 3, 2, Max) \end{itemize} & Унификация неуспешна & Откат, достижение конца БЗ, завершение работы\\
+		\hline
+	\end{tabular}
+\end{table}
+
+Запрос для задания 2.a:
+
+maxOfThreeCut(1, 3, 2, Max).
+
+\begin{table}[H]
+	\begin{tabular}{|p{0.8cm\small}|p{4.7cm\small}|p{5.7cm\small}|p{4cm\small}|}	
+		\hline
+		№ шага & Состояния резольвенты и вывод: дальнейшие действия (почему?) & Для каких термов запускается алгоритм унификации: T1=T2 и каков результат (подстановка) & Дальнейшие действия: прямой ход или откат (почему и к чему приводит?)\\
+		\hline
+		1 & Резольвента:\begin{itemize}\item maxOfThreeCut(1, 3, 2, Max) \end{itemize} & maxOfThreeCut(1, 3, 2, Max) = maxOfTwo(Num1, Num2, Num1). Унификация неуспешна & Прямой ход, переход к следующему предложению \\
+		\hline
+		2-7 & ... & ... & ...\\
+		\hline
+		8 & Резольвента:\begin{itemize}\item 1 >= 2, \item 1 >= 3, \item ! \end{itemize} & maxOfThreeCut(1, 3, 2, Max) = maxOfThreeCut(Num1, Num2, Num3, Num1). Унификация успешна\linebreak \textbf{Подстановка:} \{Num1=1, Num2=3, Num3=2, Max=Num1\}& Прямой ход, решение цели резольвенты (1 >= 2)\\
+		\hline
+		9 & Резольвента:\begin{itemize}\item 1 >= 3, \item ! \end{itemize} & 1 >= 2. Ложь & Откат, переход к следующему шагу относительно 8\\
+		\hline
+	\end{tabular}
+\end{table}
+
+\begin{table}[H]
+	\begin{tabular}{|p{0.8cm\small}|p{4.7cm\small}|p{5.7cm\small}|p{4cm\small}|}	
+		\hline
+		№ шага & Состояния резольвенты и вывод: дальнейшие действия (почему?) & Для каких термов запускается алгоритм унификации: T1=T2 и каков результат (подстановка) & Дальнейшие действия: прямой ход или откат (почему и к чему приводит?)\\
+		\hline
+		10 & Резольвента:\begin{itemize}\item 3 >= 2, \item 3 >= 1, \item ! \end{itemize} & maxOfThreeCut(1, 3, 2, Max) = maxOfThreeCut(Num1, Num2, Num3, Num2). Унификация успешна\linebreak \textbf{Подстановка:} \{Num1=1, Num2=3, Num3=2, Max=Num2\}& Прямой ход, решение цели резольвенты (1 >= 2)\\
+		\hline
+		11 & Резольвента:\begin{itemize}\item 3 >= 1, \item ! \end{itemize} & 3 >= 2. Правда & Прямой ход, решение цели резольвенты (3 >= 1)\\
+		\hline
+		12 & Резольвента:\begin{itemize}\item ! \end{itemize} & 3 >= 1. Правда & Прямой ход, решение цели резольвенты (!)\\
+		\hline
+		13 & Резольвента: пуста\linebreak \textbf{Вывод:} Max=3 & Операция отсечения & Откат к пункту 10, завершение работы\\
+		\hline
+	\end{tabular}
+\end{table}
+		
+\end{document}

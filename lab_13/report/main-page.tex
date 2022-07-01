@@ -1,0 +1,172 @@
+\documentclass[14pt,a4paper]{scrreprt}
+
+\include{preambule.inc}
+
+\begin{document}
+
+\include{00-title}
+
+\thispagestyle{empty}
+
+\chapter{Практическое задание}
+
+\section{Задание}
+
+Создать базу знаний <<Собственники>>, дополнив (и минимально изменив) базу знаний, хранящую:
+\begin{itemize}
+	\item <<Телефонный справочник>>: Фамилия, №тел, Адрес -- структура (Город, Улица, №дома, №кв.);
+	\item <<Автомобили>>: Фамилия\_владельца, Марка, Цвет, Стоимость, и др.;
+	\item <<Вкладчики банков>>: Фамилия, Банк, счет, сумма, др.;
+\end{itemize}
+знаниями о дополнительной собственности владельца. Преобразовать знания об автомобиле к форме знаний о собственности. Виды собственности (кроме автомобиля):
+\begin{itemize}
+	\item Строение, стоимость и другие его характеристики;
+	\item Участок, стоимость и другие его характеристики;
+	\item Водный транспорт, стоимость и другие его характеристики.
+\end{itemize}
+Описать и использовать вариантный домен: Собственность. Владелец может иметь, но только один объект каждого вида собственности (касается и автомобиля), или не иметь некоторых видов собственности.
+
+Используя конъюнктивное правило и разные формы задания одного вопроса (пояснить для какого № задания -- какой вопрос), обеспечить возможность поиска:
+\begin{enumerate}
+	\item Названий всех объектов собственности заданного субъекта;
+	\item Названий и стоимости всех объектов собственности заданного субъекта;
+	\item * Разработать правило, позволяющее найти суммарную стоимость всех объектов собственности заданного субъекта.
+\end{enumerate}
+Для 2-го пункта и одной фамилии составить таблицу, отражающую конкретный порядок работы системы, с объяснением порядка работы и особенностей использования доменов (указать конкретные T1 и T2 и полную подстановку на каждом шаге).
+
+\section{Код программы}
+
+\begin{lstlisting}[language=Prolog]
+domains    
+
+	surname, phone, city, street = symbol.    
+	homeNumber, appartmentNumber = unsigned.
+	address = address(city, street, homeNumber, appartmentNumber). 
+	
+	model, color = symbol.   
+	price = unsigned.      
+	
+	bank, account = symbol.   
+	sum = unsigned.    
+	
+	type = symbol.   
+	size = unsigned.      
+
+	ownership = building(address, price); 
+	area(size, price); 
+	waterTrasnport(type, color, price); 
+	car(model, color, price).  
+
+predicates    
+
+	hasPhone(surname, phone, address).   
+	hasDeposit(surname, bank, account, sum).      
+	
+	own(surname, ownership).   
+	ownObject(surname, symbol, price).
+	ownObjectPass(surname, symbol, price).  
+	objectsPrice(surname, price).
+
+clauses    
+	hasPhone("Balashov", "+79741632985", address("Moscow", "Baumanskaya", 
+		15, 21)).   
+	hasPhone("Serov", "+79146941728", address("Lipetsk", "Gagarina", 192, 
+		13)).   
+	hasPhone("Paraskun", "+79172641928", address("Moscow", "Izmaylovskaya",
+		73, 2)).    
+	hasDeposit("Balashov", "Home-credit", "5148465849516259", 24318947).   
+	hasDeposit("Balashov", "VTB", "5670148746192648", 478976).   
+	hasDeposit("Paraskun", "Sberbank", "7193019871942510", 100000).
+	
+	own("Balashov", area(20, 139200)).   
+	own("Balashov", car("BMW-Y15", "Red", 2345700)).   
+	own("Paraskun", building(address("Moscow", "Lubyanka", 13, 182),
+		1410000)).   
+	own("Paraskun", waterTrasnport("Bike", "White", 80000)).
+	
+	ownObject(Surname, building, Price) :- own(Surname, building(_, Price)).
+	ownObject(Surname, area, Price) :- own(Surname, area(_, Price)).
+	ownObject(Surname, waterTrasnport, Price) :- own(Surname, 
+		waterTrasnport(_, _, Price)).
+	ownObject(Surname, car, Price) :- own(Surname, car(_, _, Price)).
+	
+	ownObjectPass(Surname, building, Price) :- own(Surname, building(_, 
+		Price)), !.
+	ownObjectPass(Surname, area, Price) :- own(Surname, area(_, Price)), !.
+	ownObjectPass(Surname, waterTrasnport, Price) :- own(Surname, 
+		waterTrasnport(_, _, Price)), !.
+	ownObjectPass(Surname, car, Price) :- own(Surname, car(_, _, Price)), !.
+	ownObjectPass(_, _, 0).
+	
+	objectsPrice(Surname, Price) :- 
+		ownObjectPass(Surname, building, BPrice),
+		ownObjectPass(Surname, area, APrice),
+		ownObjectPass(Surname, waterTransport, WtPrice),
+		ownObjectPass(Surname, car, CPrice),
+		Price = BPrice + APrice + WtPrice + CPrice.
+
+goal
+	%ownObject("Balashov", Objects, _).
+	%ownObject("Paraskun", Objects, Price).
+	objectsPrice("Paraskun", Price).
+\end{lstlisting}
+
+\section{Таблицы выполнения программы}
+
+Запрос для заданий 2:
+
+ownObject(``Paraskun'', Objects, Price).
+
+\begin{table}[H]
+	\begin{tabular}{|p{1.2cm\small}|p{9cm\small}|p{5cm\small}|}	
+		\hline
+		№ шага & Сравниваемые термы; результат; подстановка, если есть & Дальнейшие действия: прямой ход или откат (к чему приводит?)\\
+		\hline
+		1 & Сравнение:\linebreak ownObject(``Paraskun'', Objects, Price) = hasPhone(``Balashov'', ``+79741632985'', address(``Moscow'', ``Baumanskaya'', 15, 21)). Унификация неуспешна (несовпадение функторов) & Прямой ход, переход к следующему предложению\\
+		\hline
+		2-10 & ... & ...\\
+		\hline
+		11 & Сравнение:\linebreak ownObject(``Paraskun'', Objects, Price) = ownObject(Surname, building, Price). Унификация успешна.\linebreak \textbf{Подстановка:} \{Surname=``Paraskun'', Objects=building, Price=Price\} & Новое состояние резольвенты: own(``Paraskun'', building(\_, Price))\\
+		\hline
+		12 & Сравнение:\linebreak own(``Paraskun'', building(\_, Price)) = hasPhone(``Balashov'', ``+79741632985'', address(``Moscow'', ``Baumanskaya'', 15, 21)). Унификация неуспешна (несовпадение функторов) & Прямой ход, переход к следующему предложению\\
+		\hline
+		13-19 & Унификация неуспешна & Прямой ход, переход к следующему предложению\\
+		\hline
+		20 & Сравнение:\linebreak own(``Paraskun'', building(\_, Price)) = own(``Paraskun'', building(address(``Moscow'', ``Lubyanka'', 13, 182), 1410000)). Унификация успешна.\linebreak \textbf{Подстановка:} \{Surname=``Paraskun'', Objects=building, Price=1410000\} & Новое состояние резольвенты: пуста\linebreak \textbf{Вывод:} Objects=building, Price=1410000\linebreak Откат, следующее предложение, \textbf{новая подстановка:} \{Surname=``Paraskun'', Objects=building, Price=Price\}\\
+		\hline
+		21 & Сравнение:\linebreak own(``Paraskun'', building(\_, Price)) = own(``Paraskun'', waterTrasnport(``Bike'', ``White'', 80000)). Унификация неуспешна (несовпадение термов) & Прямой ход, переход к следующему предложению\\
+		\hline
+		22-31 & ... (несовпадение функторов) & Откат, достижение конца БЗ, переход к следующему предложению относительно 11\\
+		\hline
+		32 & Сравнение:\linebreak ownObject(``Paraskun'', Objects, Price) = ownObject(Surname, area, Price). Унификация успешна.\linebreak \textbf{Подстановка:} \{Surname=``Paraskun'', Objects=area, Price=Price\} & Новое состояние резольвенты: own(``Paraskun'', area(\_, Price))\\
+		\hline
+		33-53 & Унификация неуспешна & Откат, достижение конца БЗ, переход к следующему предложению относительно 32\\
+		\hline
+	\end{tabular}
+\end{table}
+
+\begin{table}[H]
+	\begin{tabular}{|p{1.2cm\small}|p{9cm\small}|p{5cm\small}|}	
+		\hline
+		№ шага & Сравниваемые термы; результат; подстановка, если есть & Дальнейшие действия: прямой ход или откат (к чему приводит?)\\
+		\hline
+		54 & Сравнение:\linebreak ownObject(``Paraskun'', Objects, Price) = ownObject(Surname, waterTransport, Price). Унификация успешна.\linebreak \textbf{Подстановка:} \{Surname=``Paraskun'', Objects=waterTransport, Price=Price\} & Новое состояние резольвенты: own(``Paraskun'', waterTransport(\_, \_, Price))\\
+		\hline
+		55-63 & Унификация неуспешна & Прямой ход, переход к следующему предложению\\
+		\hline
+		64 & Сравнение:\linebreak ownObject(``Paraskun'', Objects, Price) = own(``Paraskun'', waterTrasnport(``Bike'', ``White'', 80000)). Унификация успешна.\linebreak \textbf{Подстановка:} \{Surname=``Paraskun'', Objects=waterTransport, Price=80000\} & Новое состояние резольвенты: пуста\linebreak \textbf{Вывод:} Objects=waterTransport, Price=80000\linebreak Откат, переход к следующему предложению, \textbf{новая подстановка:} \{Surname=``Paraskun'', Objects=waterTransport, Price=Price\}\\
+		\hline
+		65-74 & Унификация неуспешна & Откат, достижение конца БЗ, переход к следующему предложению относительно 54\\
+		\hline
+		75 & Сравнение:\linebreak ownObject(``Paraskun'', Objects, Price) = ownObject(Surname, car, Price). Унификация успешна.\linebreak \textbf{Подстановка:} \{Surname=``Paraskun'', Objects=car, Price=Price\} & Новое состояние резольвенты: own(``Paraskun'', car(\_, \_, Price))\\
+		\hline
+		76-95 & Унификация неуспешна & Откат, достижение конца БЗ, переход к следующему предложению относительно 75\\
+		\hline
+		96 & Сравнение:\linebreak ownObject(``Paraskun'', Objects, Price) = ownObjectPass(Surname, building, Price).Унификация неуспешн (несовпадение функторов) & Прямой ход, переход к следующему предложению\\
+		\hline
+		97-101 & Унификация неуспешна & Откат, достижение конца БЗ, резольвента пуста, завершение работы\\
+		\hline
+	\end{tabular}
+\end{table}
+
+\end{document}

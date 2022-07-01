@@ -1,0 +1,513 @@
+\documentclass[14pt,a4paper]{scrreprt}
+
+\include{preambule.inc}
+
+\begin{document}
+
+\include{00-title}
+
+\thispagestyle{empty}
+
+\chapter{Часть 1}
+
+\section{Задание}
+
+Составить программу, т.е. модель предметной области – базу знаний, объединив в ней
+информацию – знания:
+\begin{itemize}
+	\item <<Телефонный справочник>>: Фамилия, №тел, Адрес -- структура (Город, Улица, №дома, №кв.);
+	\item <<Автомобили>>: Фамилия\_владельца, Марка, Цвет, Стоимость, и др.;
+	\item <<Вкладчики банков>>: Фамилия, Банк, счет, сумма, др.
+\end{itemize}
+Владелец может иметь несколько телефонов, автомобилей, вкладов (Факты). Используя правила, обеспечить возможность поиска:
+\begin{enumerate}
+	\item \begin{itemize}
+		\item По № телефона найти: Фамилию, Марку автомобиля, Стоимость автомобиля
+		(может быть несколько);
+		\item Используя сформированное в предыдущем пункте правило, по № телефона найти: только Марку автомобиля (автомобилей может быть несколько);
+	\end{itemize}
+	\item Используя простой, не составной вопрос: по Фамилии (уникальна в городе, но в
+	разных городах есть однофамильцы) и Городу проживания найти: Улицу проживания, Банки, в которых есть вклады и №телефона;
+	\item Для одного из вариантов ответов каждого пункта задания 1 описать словесно порядок поиска ответа на вопрос, указав, как выбираются знания, и, при этом, для каждого этапа унификации, выписать подстановку – наибольший общий унификатор, и соответствующие примеры термов.
+\end{enumerate}
+
+\section{Код программы}
+
+\begin{lstlisting}[language=Prolog]
+	domains
+	
+	surname, phone, city, street = symbol.
+	homeNumber, appartmentNumber = unsigned.
+	address = address(city, street, homeNumber, appartmentNumber).
+	
+	model, color = symbol.
+	price = unsigned.
+	
+	bank, account = symbol.
+	sum = unsigned.
+	
+	predicates
+	
+	hasPhone(surname, phone, address).
+	hasCar(surname, model, color, price).
+	hasDeposit(surname, bank, account, sum).
+	
+	getOnPhone(phone, surname, model, price).
+	getOnSurnameAndCity(surname, city, street ,bank, phone).
+	getOnModelAndColor(model, color, surname, city, phone, bank).
+	
+	clauses
+	
+	hasPhone("Balashov", "+79741632985", address("Moscow", "Baumanskaya",
+		15, 21)).
+	hasPhone("Serov", "+79146941728", address("Lipetsk", "Gagarina", 192, 
+		13)).
+	hasPhone("Paraskun", "+79172641928", address("Moscow", "Izmaylovskaya", 
+		73, 2)).
+	hasCar("Balashov", "Lada Vesta", "Black", 507800).
+	hasCar("Balashov", "BMW-Y015", "Red", 10000000).
+	hasCar("Paraskun", "BMW-Y015", "Red", 10000000).
+	hasDeposit("Balashov", "Home-credit", "5148465849516259", 24318947).
+	hasDeposit("Balashov", "VTB", "5670148746192648", 478976).
+	hasDeposit("Paraskun", "Sberbank", "7193019871942510", 100000).
+	
+	getOnPhone(Phone, Surname, Model, Price) :- hasPhone(Surname, Phone,
+		 _), hasCar(Surname, Model, _, Price).
+	getOnSurnameAndCity(Surname, City, Street, Bank, Phone) :- 
+		hasPhone(Surname, Phone, address(City, Street, _, _)),
+	hasDeposit(Surname, Bank, _, _). 
+	getOnModelAndColor(Model, Color, Surname, City, Phone, Bank) :- 
+		hasCar(Surname, Model, Color, _), 
+	hasPhone(Surname, Phone, address(City, _, _, _)), hasDeposit(Surname, 
+		Bank, _, _).
+	
+	goal
+	
+	% task 1.1.a)
+	getOnPhone("+79741632985", Surname, Model, Price).
+	% task 1.1.b)
+	%getOnPhone("+79741632985", _, Model, _).
+	% task 1.2)
+	%getOnSurnameAndCity("Balashov", "Moscow", Street, Bank, Phone).
+	% task 2)
+	% 2+ owner
+	%getOnModelAndColor("BMW-Y015", "Red", Surname, City, Phone, Bank).
+	% one owner
+	%getOnModelAndColor("Lada Vesta", "Black", Surname, City, Phone, Bank).
+	% no owner
+	%getOnModelAndColor("Lada Granta", "White", Surname, City, Phone, Bank).
+\end{lstlisting}
+
+\section{Таблицы выполнения программы}
+
+Запрос для заданий 1.а:
+
+getOnPhone(``+79741632985'', Surname, Model, Price).
+
+\begin{table}[H]
+	\begin{tabular}{|p{1.2cm\small}|p{9cm\small}|p{5cm\small}|}	
+		\hline
+		№ шага & Сравниваемые термы; результат; подстановка, если есть & Дальнейшие действия: прямой ход или откат (к чему приводит?)\\
+		\hline
+		1 & Сравнение:\linebreak getOnPhone(``+79741632985'', Surname, Model, Price) = hasPhone(``Balashov'', ``+79741632985'', address(``Moscow'', ``Baumanskaya'', 15, 21)). Унификация неуспешна (несовпадение функторов) & Прямой ход, переход к следующему предложению\\
+		\hline
+		2-3 & ... & ...\\
+		\hline
+		4 & Сравнение:\linebreak getOnPhone(``+79741632985'', Surname, Model, Price) = hasCar(``Balashov'', ``Lada Vesta'', ``Black'', 507800). Унификация неуспешна (несовпадение функторов) & Прямой ход, переход к следующему предложению\\
+		\hline
+		5-6 & ... & ... \\
+		\hline
+		7 & Сравнение:\linebreak getOnPhone(``+79741632985'', Surname, Model, Price) = hasDeposit(``Balashov'', ``Home-credit'', ``5148465849516259'', 24318947). Унификация неуспешна (несовпадение функторов) & Прямой ход, переход к следующему предложению\\
+		\hline
+		8-9 & ... & ... \\
+		\hline
+	\end{tabular}
+\end{table}
+
+
+\begin{table}[H]
+	\begin{tabular}{|p{1.2cm\small}|p{9cm\small}|p{5cm\small}|}	
+		\hline
+		№ шага & Сравниваемые термы; результат; подстановка, если есть & Дальнейшие действия: прямой ход или откат (к чему приводит?)\\
+		\hline
+		10 & Сравнение:\linebreak getOnPhone(``+79741632985'', Surname, Model, Price) = getOnPhone(Phone, Surname, Model, Price). Унификация успешна\linebreak \textbf{Подстановка:} \{Phone=``+79741632985'', Surname=Surname, Model=Model, Price=Price\} &  Новое состояние резольвенты: hasPhone(Surname, ``+79741632985'', \_), hasCar(Surname, Model, \_, Price).\\ 
+		\hline
+		11 & Сравнение:\linebreak hasPhone(Surname, ``+79741632985'', \_) = hasPhone(``Balashov'', ``+79741632985'', address(``Moscow'', ``Baumanskaya'', 15, 21)). Унификация успешна.\linebreak \textbf{Подстановка:} \{Phone=``+79741632985'', Surname=``Balashov'', Model=Model, Price=Price\} & Новое состояние резольвенты: hasCar(``Balashov'', Model, \_, Price). \\
+		\hline
+		12 & Сравнение:\linebreak hasCar(``Balashov'', Model, \_, Price) = hasPhone(``Balashov'', ``+79741632985'', address(``Moscow'', ``Baumanskaya'', 15, 21)). Унификация неуспешна (несовпадение функторов) & Прямой ход, переход к следующему предложению\\
+		\hline
+		13-14 & ... & ...\\
+		\hline
+		15 & Сравнение:\linebreak hasCar(``Balashov'', Model, \_, Price) = hasCar(``Balashov'', ``Lada Vesta'', ``Black'', 507800). Унификация успешна.\linebreak \textbf{Подстановка:} \{Phone=``+79741632985'', Surname=``Balashov'', Model=``Lada Vesta'', Price=507800\} & Новое состояние резольвенты: пуста\linebreak \textbf{Вывод:} Surname=``Balashov'', Model=``Lada Vesta'', Price=507800\linebreak Откат, следующее предложение, \textbf{новая подстановка:} \{Phone= ``+79741632985'', Surname=``Balashov'', Model=Model, Price=Price\}\\
+		\hline
+		16 & Сравнение:\linebreak hasCar(``Balashov'', Model, \_, Price) = hasCar(``Balashov'', ``BMW-Y015'', ``Red'', 10000000). Унификация успешна.\linebreak \textbf{Подстановка:} \{Phone=``+79741632985'', Surname=``Balashov'', Model=``BMW-Y015'', Price=10000000\} & Новое состояние резольвенты: пуста\linebreak \textbf{Вывод:} Surname=``Balashov'', Model=``BMW-Y015'', Price=10000000\linebreak Откат, следующее предложение, \textbf{новая подстановка:} \{Phone= ``+79741632985'', Surname=``Balashov'', Model=Model, Price=Price\}\\
+		\hline
+	\end{tabular}
+\end{table}
+
+\begin{table}[H]
+	\begin{tabular}{|p{1.2cm\small}|p{9cm\small}|p{5cm\small}|}	
+		\hline
+		№ шага & Сравниваемые термы; результат; подстановка, если есть & Дальнейшие действия: прямой ход или откат (к чему приводит?)\\
+		\hline
+		17 & Сравнение:\linebreak hasCar(``Balashov'', Model, \_, Price) = hasCar(``Paraskun'', ``BMW-Y015'', ``Red'', 10000000). Унификация неуспешна (несовпадение термов) & Прямой ход, переход к следующему предложению\\
+		\hline
+		18-22 & ... (несовпадение функторов) & ...\\
+		\hline
+		23 & Сравнение:\linebreak hasCar(``Balashov'', Model, \_, Price) = getOnModelAndColor(Model, Color, Surname, City, Phone, Bank). Унификация неуспешна (несовпадение функторов) & Откат, достижение конца БЗ, переход к следующему шагу относительно 11, \textbf{новая подстановка:} \{Phone=
+		``+7974163298'', Surname=Surname, Model=Model, Price=Price\}\\
+		\hline
+	\end{tabular}
+\end{table}
+
+Запрос для задания 1.b:
+
+getOnPhone(``+79741632985'', \_, Model, \_).
+
+\begin{table}[H]
+	\begin{tabular}{|p{1.2cm\small}|p{9cm\small}|p{5cm\small}|}	
+		\hline
+		№ шага & Сравниваемые термы; результат; подстановка, если есть & Дальнейшие действия: прямой ход или откат (к чему приводит?)\\
+		\hline
+		1-9 & Аналогично предыдущей таблице & ..\\
+		\hline
+		10 & Сравнение:\linebreak getOnPhone(``+79741632985'', \_, Model, \_) = getOnPhone(Phone, Surname, Model, Price). Унификация успешна\linebreak \textbf{Подстановка:} \{Phone=``+79741632985'', Surname=Surname, Model=Model, Price=Price\} &  Новое состояние резольвенты: hasPhone(Surname, ``+79741632985'', \_), hasCar(Surname, Model, \_, Price).\\ 
+		\hline
+		11 & Сравнение:\linebreak hasPhone(Surname, ``+79741632985'', \_) = hasPhone(``Balashov'', ``+79741632985'', address(``Moscow'', ``Baumanskaya'', 15, 21)). Унификация успешна.\linebreak \textbf{Подстановка:} \{Phone=``+79741632985'', Surname=``Balashov'', Model=Model, Price=Price\} & Новое состояние резольвенты: hasCar(``Balashov'', Model, \_, Price). \\
+		\hline
+		12 & Сравнение:\linebreak hasCar(``Balashov'', Model, \_, Price) = hasPhone(``Balashov'', ``+79741632985'', address(``Moscow'', ``Baumanskaya'', 15, 21)). Унификация неуспешна (несовпадение функторов) & Прямой ход, переход к следующему предложению\\
+		\hline
+	\end{tabular}
+\end{table}
+
+\begin{table}[H]
+	\begin{tabular}{|p{1.2cm\small}|p{9cm\small}|p{5cm\small}|}	
+		\hline
+		№ шага & Сравниваемые термы; результат; подстановка, если есть & Дальнейшие действия: прямой ход или откат (к чему приводит?)\\
+		\hline
+		13-14 & ... & ...\\
+		\hline
+		15 & Сравнение:\linebreak hasCar(``Balashov'', Model, \_, Price) = hasCar(``Balashov'', ``Lada Vesta'', ``Black'', 507800). Унификация успешна.\linebreak \textbf{Подстановка:} \{Phone=``+79741632985'', Surname=``Balashov'', Model=``Lada Vesta'', Price=507800\} & Новое состояние резольвенты: пуста\linebreak \textbf{Вывод:} Model=``Lada Vesta''\linebreak Откат, следующее предложение, \textbf{новая подстановка:} \{Phone= ``+79741632985'', Surname=``Balashov'', Model=Model, Price=Price\}\\
+		\hline
+		16 & Сравнение:\linebreak hasCar(``Balashov'', Model, \_, Price) = hasCar(``Balashov'', ``BMW-Y015'', ``Red'', 10000000). Унификация успешна.\linebreak \textbf{Подстановка:} \{Phone=``+79741632985'', Surname=``Balashov'', Model=``BMW-Y015'', Price=10000000\} & Новое состояние резольвенты: пуста\linebreak \textbf{Вывод:} Model=``BMW-Y015''\linebreak Откат, следующее предложение, \textbf{новая подстановка:} \{Phone= ``+79741632985'', Surname=``Balashov'', Model=Model, Price=Price\}\\
+		\hline
+		17 & Сравнение:\linebreak hasCar(``Balashov'', Model, \_, Price) = hasCar(``Paraskun'', ``BMW-Y015'', ``Red'', 10000000). Унификация неуспешна (несовпадение термов) & Прямой ход, переход к следующему предложению\\
+		\hline
+		18-22 & ... (несовпадение функторов) & ...\\
+		\hline
+		23 & Сравнение:\linebreak hasCar(``Balashov'', Model, \_, Price) = getOnModelAndColor(Model, Color, Surname, City, Phone, Bank). Унификация неуспешна (несовпадение функторов) & Откат, достижения конца БЗ, переход к следующему шагу относительно 11, \textbf{новая подстановка:} \{Phone= ``+7974163298'', Surname=Surname, Model=Model, Price=Price\}\\
+		\hline
+	\end{tabular}
+\end{table}
+
+Запрос для задания 2:
+
+getOnSurnameAndCity(``Balashov'', ``Moscow'', Street, Bank, Phone).
+
+
+\begin{table}[H]
+	\begin{tabular}{|p{1.2cm\small}|p{9cm\small}|p{5cm\small}|}
+		\hline
+		№ шага & Сравниваемые термы; результат; подстановка, если есть & Дальнейшие действия: прямой ход или откат (к чему приводит?)\\
+		\hline
+		1 & Сравнение:\linebreak getOnSurnameAndCity(``Balashov'', ``Moscow'', Street, Bank, Phone) = hasPhone(``Balashov'', ``+79741632985'', address(``Moscow'', ``Baumanskaya'', 15, 21)). Унификация неуспешна (несовпадение функторов) & Прямой ход, переход к следующему предложению\\
+		\hline
+		2-10 & ... & ... \\
+		\hline
+		11 & Сравнение:\linebreak getOnSurnameAndCity(``Balashov'', ``Moscow'', Street, Bank, Phone) = getOnSurnameAndCity(Surname, City, Street, Bank, Phone). Унификация успешна.\linebreak \textbf{Подстановка:} \{Surname=``Balashov'', City=``Moscow'', Street=Street, Bank=Bank, Phone=Phone\} & Новое состояние резольвенты: hasPhone(``Balashov'', Phone, address(``Moscow'', Street, \_, \_)), hasDeposit(``Balshov'', Bank, \_, \_)\\
+		\hline
+		12 & Сравнение:\linebreak hasPhone(``Balashov'', Phone, address(``Moscow'', Street, \_, \_)) = hasPhone(``Balashov'', ``+79741632985'', address(``Moscow'', ``Baumanskaya'', 15, 21))\linebreak \textbf{Подстановка:} \{Surname=``Balashov'', City=``Moscow'', Street=``Baumanskaya'', Bank=Bank, Phone=``+79741632985''\} & Новое состояние резольвенты: hasDeposit(``Balshov'', Bank, \_, \_)\\
+		\hline
+		13 & Сравнение:\linebreak hasDeposit(``Balshov'', Bank, \_, \_) = hasPhone(``Balashov'', ``+79741632985'', address(``Moscow'', ``Baumanskaya'', 15, 21)). Унификация неуспешна (несовпадение функторов) & Прямой ход, переход к следующему предложению \\
+		\hline
+		14-18 & ... & ...\\
+		\hline
+		19 & Сравнение:\linebreak hasDeposit(``Balshov'', Bank, \_, \_) = hasDeposit(``Balashov'', ``Home-credit'', ``5148465849516259'', 24318947). Унификация успешна.\linebreak \textbf{Подстановка:} \{Surname=``Balashov'', City=``Moscow'', Street=``Baumanskaya'', Bank=``Home-credit'', Phone=``+79741632985''\} & Новое состояние резольвенты: пуста\linebreak \textbf{Вывод:} Street=``Baumanskaya'', Bank=``Home-credit'', Phone=``+79741632985''\linebreak Откат, следующее предложение, \textbf{новая подстановка:} \{Surname=``Balashov'', City=``Moscow'', Street=``Baumanskaya'', Bank=Bank, Phone=``+79741632985''\}\\
+		\hline
+	\end{tabular}
+\end{table}
+
+\begin{table}[H]
+	\begin{tabular}{|p{1.2cm\small}|p{9cm\small}|p{5cm\small}|}
+		\hline
+		№ шага & Сравниваемые термы; результат; подстановка, если есть & Дальнейшие действия: прямой ход или откат (к чему приводит?)\\
+		\hline
+		20 & Сравнение:\linebreak hasDeposit(``Balshov'', Bank, \_, \_) = hasDeposit(``Balashov'', ``VTB'', ``5670148746192648'', 478976). Унификация успешна.\linebreak \textbf{Подстановка:} \{Surname=``Balashov'', City=``Moscow'', Street=``Baumanskaya'', Bank=``VTB'', Phone=``+79741632985''\} & Новое состояние резольвенты: пуста\linebreak \textbf{Вывод:} Street=``Baumanskaya'', Bank=``VTB'', Phone=``+79741632985''\linebreak Откат, следующее предложение, \textbf{новая подстановка:} \{Surname=``Balashov'', City=``Moscow'', Street=``Baumanskaya'', Bank=Bank, Phone=``+79741632985''\}\\
+		\hline
+		21 & Сравнение:\linebreak hasDeposit(``Balshov'', Bank, \_, \_) = hasDeposit(``Paraskun'', ``Sberbank'', ``7193019871942510'', 100000). Унификация неуспешна (несовпдение термов) & Прямой ход, переход к следующему предложению\\
+		\hline
+		22-23 & ... (несовпадение функторов) & ...\\
+		\hline
+		24 & Сравнение:\linebreak hasDeposit(``Balshov'', Bank, \_, \_) = getOnModelAndColor(Model, Color, Surname, City, Phone, Bank). Унификация неуспешна (несовпадение функторов) & Откат, достижения конца БЗ, переход к следующему шагу относительно 12, \textbf{новая подстановка:} \{Surname=``Balashov'', City=``Moscow'', Street=Street, Bank=Bank, Phone=Phone\}\\
+		\hline
+	\end{tabular}
+\end{table}
+
+\chapter{Часть 2}
+
+\section{Задание}
+
+Используя базу знаний, хранящую знания:
+\begin{itemize}
+	\item <<Телефонный справочник>>: Фамилия, №тел, Адрес -- структура (Город, Улица, №дома, №кв.);
+	\item <<Автомобили>>: Фамилия\_владельца, Марка, Цвет, Стоимость, и др.;
+	\item <<Вкладчики банков>>: Фамилия, Банк, счет, сумма, др.
+\end{itemize}
+
+Владелец может иметь несколько телефонов, автомобилей, вкладов (Факты). В разных
+городах есть однофамильцы, в одном городе -- фамилия уникальна.
+Используя конъюнктивное правило и простой вопрос, обеспечить возможность
+поиска: ро Марке и Цвету автомобиля найти Фамилию, Город, Телефон и Банки, в которых
+владелец автомобиля имеет вклады. Лишней информации не находить и не передавать. Владельцев может быть несколько (не более 3-х), один и ни одного.
+\begin{enumerate}
+	\item Для каждого из трех вариантов словесно подробно описать порядок формирования ответа (в виде таблицы). При этом, указать – отметить моменты очередного запуска алгоритма унификации и полный результат его работы. Обосновать следующий шаг работы системы. Выписать унификаторы -- подстановки. Указать моменты, причины и результат отката, если он есть.
+	\item Для случая нескольких владельцев (2-х): приведите примеры (таблицы) работы системы при разных порядках следования в БЗ процедур, и знаний в них: (<<Телефонный справочник>>, <<Автомобили>>, <<Вкладчики банков>>, или: <<Автомобили>>, <<Вкладчики банков>>, <<Телефонный справочник>>). Сделайте вывод: Одинаковы ли: множество работ и объем работ в разных случаях?
+	\item Оформите 2 таблицы, демонстрирующие порядок работы алгоритма унификации вопроса и подходящего заголовка правила (для двух случаев из пункта 2) и укажите результаты его работы: ответ и побочный эффект.
+\end{enumerate}
+
+\section{Код программы}
+
+Совмещен с кодом программы 1 части лабораторной работы.
+
+\section{Таблицы выполнения программы}
+
+\begin{enumerate}
+	\item Запрос для нескольких владельцев: getOnModelAndColor(``BMW-Y015'', ``Red'', Surname, City, Phone, Bank).
+
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|p{1.2cm\small}|p{9cm\small}|p{5cm\small}|}
+		\hline
+		№ шага & Сравниваемые термы; результат; подстановка, если есть & Дальнейшие действия: прямой ход или откат (к чему приводит?)\\
+		\hline
+		1 & Сравнение:\linebreak getOnModelAndColor(``BMW-Y015'', ``Red'', Surname, City, Phone, Bank) = hasPhone(``Balashov'', ``+79741632985'', address(``Moscow'', ``Baumanskaya'', 15, 21)). Унификация неуспешна (несовпадение функторов) & Прямой ход, переход к следующему предложению\\
+		\hline
+		2-11 & ... & ...\\
+		\hline
+		12 & Сравнение:\linebreak getOnModelAndColor(``BMW-Y015'', ``Red'', Surname, City, Phone, Bank) = getOnModelAndColor(Model, Color, Surname, City, Phone, Bank). Унификация успешна.\linebreak \textbf{Подстановка:} \{Model=``BMW-Y015'', Color=``Red'', Surname=Surname, City=City, Phone=Phone, Bank=Bank\} & Новое состояние резольвенты: hasCar(Surname, ``BMW-Y015'', ``Red'', \_), hasPhone(Surname, Phone, address(City, \_, \_, \_)), hasDeposit(Surname, Bank, \_, \_)\\
+		\hline 
+		13 & Сравнение:\linebreak hasCar(Surname, ``BMW-Y015'', ``Red'', \_) = hasPhone(``Balashov'', ``+79741632985'', address(``Moscow'', ``Baumanskaya'', 15, 21)). Унификация неуспешна (несовпадение функторов) & Прямой ход, переход к следующему предложению\\
+		\hline
+		14-15 & ... & ...\\
+		\hline
+		16 & Сравнение:\linebreak hasCar(Surname, ``BMW-Y015'', ``Red'', \_) = hasCar(``Balashov'', ``Lada Vesta'', ``Black'', 507800). Унификация неуспешна (несовпадение термов) & Прямой ход, переход к следующему предложению\\
+		\hline
+	\end{tabular}
+\end{table}
+
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|p{1.2cm\small}|p{9cm\small}|p{5cm\small}|}
+		\hline
+		№ шага & Сравниваемые термы; результат; подстановка, если есть & Дальнейшие действия: прямой ход или откат (к чему приводит?)\\
+		\hline
+		17 & Сравнение:\linebreak hasCar(Surname, ``BMW-Y015'', ``Red'', \_) = hasCar(``Balashov'', ``BMW-Y015'', ``Red'', 10000000). Унификация успешна.\linebreak \textbf{Подстановка:} \{Model=``BMW-Y015'', Color=``Red'', Surname=``Balashov'', City=City, Phone=Phone, Bank=Bank\} & Новое состояние резольвенты: hasPhone(``Balashov'', Phone, address(City, \_, \_, \_)), hasDeposit(``Balashov'', Bank, \_, \_)\\
+		\hline
+		18 & Сравнение:\linebreak hasPhone(``Balashov'', Phone, address(City, \_, \_, \_)) = hasPhone(``Balashov'', ``+79741632985'', address(``Moscow'', ``Baumanskaya'', 15, 21)). Унификация успешна.\linebreak \textbf{Подстановка:} \{Model=``BMW-Y015'', Color=``Red'', Surname=``Balashov'', City=``Moscow'', Phone=``+79741632985'', Bank=Bank\} & Новое состояние резольвенты: hasDeposit(``Balashov'', Bank, \_, \_)\\
+		\hline
+		19 & Сравнение:\linebreak hasDeposit(``Balashov'', Bank, \_, \_) = hasPhone(``Balashov'', ``+79741632985'', address(``Moscow'', ``Baumanskaya'', 15, 21)). Унификация неуспешна (несовпадение функторов) & Прямой ход, переход к следующему предложению\\
+		\hline
+		20-24 & ... & ...\\
+		\hline
+		25 & Сравнение:\linebreak hasDeposit(``Balashov'', Bank, \_, \_) = hasDeposit(``Balashov'', ``Home-credit'', ``5148465849516259'', 24318947). Унификация успешна.\linebreak \textbf{Подстановка:} \{Model=``BMW-Y015'', Color=``Red'', Surname=``Balashov'', City=``Moscow'', Phone=``+79741632985'', Bank=``Home-credit''\} & Новое состояние резольвенты: пуста\linebreak \textbf{Вывод:} Surname=``Balashov'', City=``Moscow'', Phone=``+79741632985'', Bank=``Home-credit''\linebreak Откат, следующее предложение,\linebreak \textbf{новая подстановка:} \{Model=``BMW-Y015'', Color=``Red'', Surname=``Balashov'', City=``Moscow'', Phone=``+79741632985'', Bank=Bank\}\\
+		\hline
+	\end{tabular}
+\end{table}
+
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|p{1.2cm\small}|p{9cm\small}|p{5cm\small}|}
+		\hline
+		№ шага & Сравниваемые термы; результат; подстановка, если есть & Дальнейшие действия: прямой ход или откат (к чему приводит?)\\
+		\hline
+		26 & Сравнение:\linebreak hasDeposit(``Balashov'', Bank, \_, \_) = hasDeposit(``Balashov'', ``VTB'', ``5670148746192648'', 478976). Унификация успешна.\linebreak \textbf{Подстановка:} \{Model=``BMW-Y015'', Color=``Red'', Surname=``Balashov'', City=``Moscow'', Phone=``+79741632985'', Bank=``VTB''\} & Новое состояние резольвенты: пуста\linebreak \textbf{Вывод:} Surname=``Balashov'', City=``Moscow'', Phone=``+79741632985'', Bank=``VTB''\linebreak Откат, следующее предложение, \textbf{новая подстановка:} \{Model=``BMW-Y015'', Color=``Red'', Surname=``Balashov'', City=``Moscow'', Phone=``+79741632985'', Bank=Bank\}\\
+		\hline
+		27 & Сравнение:\linebreak hasDeposit(``Balashov'', Bank, \_, \_) = hasDeposit(``Paraskun'', ``Sberbank'', ``7193019871942510'', 100000). Унификация неуспешна (несовпадение термов) & Прямой ход, переход к следующему предложению\\
+		\hline
+		28-30 & ... (несовпадение функторов) & Откат, достижение конца БЗ, переход к следующему шагу относительно 18, \textbf{новая подстановка:} \{Model=``BMW-Y015'', Color=``Red'', Surname=``Balashov'', City=City, Phone=Phone, Bank=Bank\}\\
+		\hline
+		
+	\end{tabular}
+\end{table}
+
+	\item Запрос для одного владельца: getOnModelAndColor(``Lada Vesta'', ``Black'', Surname, City, Phone, Bank).
+	
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|p{1.2cm\small}|p{9cm\small}|p{5cm\small}|}
+		\hline
+		№ шага & Сравниваемые термы; результат; подстановка, если есть & Дальнейшие действия: прямой ход или откат (к чему приводит?)\\
+		\hline
+		1 & Сравнение:\linebreak getOnModelAndColor(``Lada Vesta'', ``Black'', Surname, City, Phone, Bank) = hasPhone(``Balashov'', ``+79741632985'', address(``Moscow'', ``Baumanskaya'', 15, 21)). Унификация неуспешна (несовпадение функторов) & Прямой ход, переход к следующему предложению\\
+		\hline
+		2-11 & ...  & ...\\
+		\hline
+	\end{tabular}
+\end{table}{\tiny {\tiny {\tiny {\normalsize }}}}
+
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|p{1.2cm\small}|p{9cm\small}|p{5cm\small}|}
+		\hline
+		№ шага & Сравниваемые термы; результат; подстановка, если есть & Дальнейшие действия: прямой ход или откат (к чему приводит?)\\
+		\hline
+		12 & Сравнение:\linebreak getOnModelAndColor(``Lada Vesta'', ``Black'', Surname, City, Phone, Bank) = getOnModelAndColor(Model, Color, Surname, City, Phone, Bank). Унификация успешна.\linebreak \textbf{Подстановка:} \{Model=``Lada Vesta'', Color=``Black'', Surname=Surname, City=City, Phone=Phone, Bank=Bank\} & Новое состояние резольвенты: hasCar(Surname, ``Lada Vesta'', ``Black'', \_), hasPhone(Surname, Phone, address(City, \_, \_, \_)), hasDeposit(Surname, Bank, \_, \_)\\
+		\hline 
+		13 & Сравнение:\linebreak hasCar(Surname, ``Lada Vesta'', ``Black'', \_) = hasPhone(``Balashov'', ``+79741632985'', address(``Moscow'', ``Baumanskaya'', 15, 21)). Унификация неуспешна (несовпадение функторов) & Прямой ход, переход к следующему предложению\\
+		\hline
+		14-15 & ... & ...\\
+		\hline
+		16 & Сравнение:\linebreak hasCar(Surname, ``Lada Vesta'', ``Black'', \_) = hasCar(``Balashov'', ``Lada Vesta'', ``Black'', 507800). Унификация успешна.\linebreak \textbf{Подстановка:} \{Model=``Lada Vesta'', Color=``Black'', Surname=``Balashov'', City=City, Phone=Phone, Bank=Bank\} & Новое состояние резольвенты: hasPhone(``Balashov'', Phone, address(City, \_, \_, \_)), hasDeposit(``Balashov'', Bank, \_, \_)\\
+		\hline
+		17 & Сравнение:\linebreak hasPhone(``Balashov'', Phone, address(City, \_, \_, \_)) = hasPhone(``Balashov'', ``+79741632985'', address(``Moscow'', ``Baumanskaya'', 15, 21)).  Унификация успешна.\linebreak \textbf{Подстановка:} \{Model=``Lada Vesta'', Color=``Black'', Surname=``Balashov'', City=``Moscow'', Phone=``+79741632985'', Bank=Bank\} & Новое состояние резольвенты:  hasDeposit(``Balashov'', Bank, \_, \_)\\
+		\hline
+		18 & Сравнение:\linebreak hasDeposit(``Balashov'', Bank, \_, \_) =  hasPhone(``Balashov'', ``+79741632985'', address(``Moscow'', ``Baumanskaya'', 15, 21)).  Унификация неуспешна & Прямой ход, переход к следующему предложению\\
+		\hline
+		19-23 & ... & ...\\
+		\hline
+		24 & Сравнение:\linebreak hasDeposit(``Balashov'', Bank, \_, \_) = hasDeposit(``Balashov'', ``Home-credit'', ``5148465849516259'', 24318947). Унификация успешна.\linebreak \textbf{Подстановка:} \{Model=``Lada Vesta'', Color=``Black'', Surname=``Balashov'', City=``Moscow'', Phone=``+79741632985'', Bank=``Home-credit''\} & Новое состояние резольвенты: пуста\linebreak \textbf{Вывод:} Surname=``Balashov'', City=``Moscow'', Phone=``+79741632985'', Bank=``Home-credit''\\
+		\hline
+	\end{tabular}
+\end{table}
+
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|p{1.2cm\small}|p{9cm\small}|p{5cm\small}|}
+		\hline
+		№ шага & Сравниваемые термы; результат; подстановка, если есть & Дальнейшие действия: прямой ход или откат (к чему приводит?)\\
+		\hline
+		24 & .. & Откат, следующее предложение, \textbf{новая подстановка:} \{Model=``Lada Vesta'', Color=``Black'', Surname=``Balashov'', City=``Moscow'', Phone=``+79741632985'', Bank=Bank\}\\
+		\hline
+		25 & Сравнение:\linebreak hasDeposit(``Balashov'', Bank, \_, \_) = hasDeposit(``Balashov'', ``VTB'', ``5670148746192648'', 478976). Унификация успешна.\linebreak \textbf{Подстановка:} \{Model=``Lada Vesta'', Color=``Black'', Surname=``Balashov'', City=``Moscow'', Phone=``+79741632985'', Bank=``VTB''\} & Новое состояние резольвенты: пуста\linebreak \textbf{Вывод:} Surname=``Balashov'', City=``Moscow'', Phone=``+79741632985'', Bank=``VTB''\linebreak Откат, следующее предложение, \textbf{новая подстановка:} \{Model=``Lada Vesta'', Color=``Black'', Surname=``Balashov'', City=``Moscow'', Phone=``+79741632985'', Bank=Bank\}\\
+		\hline
+		26-29 & Унификация неуспешна & Откат, достижение конца БЗ, переход к следующему шагу относительно 17, \textbf{новая подстановка:} \{Model=``Lada Vesta'', Color=``Black'', Surname=``Balashov'', City=City, Phone=Phone, Bank=Bank\}\\
+		\hline
+	\end{tabular}
+\end{table}
+	
+	\item Запрос для отсутствия владельцев: getOnModelAndColor(``Lada Granta'', ``White'', Surname, City, Phone, Bank).
+
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|p{1.2cm\small}|p{9cm\small}|p{5cm\small}|}
+		\hline
+		№ шага & Сравниваемые термы; результат; подстановка, если есть & Дальнейшие действия: прямой ход или откат (к чему приводит?)\\
+		\hline
+		1 & Сравнение:\linebreak getOnModelAndColor(``Lada Granta'', ``White'', Surname, City, Phone, Bank) = hasPhone(``Balashov'', ``+79741632985'', address(``Moscow'', ``Baumanskaya'', 15, 21)). Унификация неуспешна (несовпадение функторов) & Прямой ход, переход к следующему предложению\\
+		\hline
+	\end{tabular}
+\end{table}
+		
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|p{1.2cm\small}|p{9cm\small}|p{5cm\small}|}
+		\hline
+		№ шага & Сравниваемые термы; результат; подстановка, если есть & Дальнейшие действия: прямой ход или откат (к чему приводит?)\\
+		\hline	
+		2-10 & ... & ...\\
+		\hline
+		12 & Сравнение:\linebreak getOnModelAndColor(``Lada Granta'', ``White'', Surname, City, Phone, Bank) = getOnModelAndColor(Model, Color, Surname, City, Phone, Bank). Унификация успешна.\linebreak \textbf{Подстановка:} \{Model=``Lada Granta'', Color=``White'', Surname=Surname, City=City, Phone=Phone, Bank=Bank\} & Новое состояние резольвенты: hasCar(Surname, ``Lada Granta'', ``White'', \_), hasPhone(Surname, Phone, address(City, \_, \_, \_)), hasDeposit(Surname, Bank, \_, \_)\\
+		\hline 
+		13 & Сравнение:\linebreak hasCar(Surname, ``Lada Granta'', ``White'', \_) = hasPhone(``Balashov'', ``+79741632985'', address(``Moscow'', ``Baumanskaya'', 15, 21)). Унификация неуспешна (несовпадение функторов) & Прямой ход, переход к следующему предложению\\
+		\hline
+		14-24 & Унификация неуспешна & Откат, достижение конца БЗ, резольвента пуста, завершение работы\\
+		\hline 
+	\end{tabular}
+\end{table}
+
+	
+	\item Выполнение первого запроса при порядке знаний <<Телефонный справочник>>, <<Автомобили>>, <<Вкладчики банков>> представлено в пункте 1.
+	
+	\item Выполнение первого запроса при порядке знаний <<Автомобили>>, <<Вкладчики банков>>, <<Телефонный справочник>> представлено ниже.
+	
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|p{1.2cm\small}|p{9cm\small}|p{5cm\small}|}
+		\hline
+		№ шага & Сравниваемые термы; результат; подстановка, если есть & Дальнейшие действия: прямой ход или откат (к чему приводит?)\\
+		\hline
+		1 & Сравнение:\linebreak getOnModelAndColor(``BMW-Y015'', ``Red'', Surname, City, Phone, Bank) = hasCar(``Balashov'', ``Lada Vesta'', ``Black'', 507800). Унификация неуспешна (несовпадение функторов) & Прямой ход, переход к следующему предложению\\
+		\hline
+		2-11 & ... & ...\\
+		\hline
+		12 & Сравнение:\linebreak getOnModelAndColor(``BMW-Y015'', ``Red'', Surname, City, Phone, Bank) = getOnModelAndColor(Model, Color, Surname, City, Phone, Bank). Унификация успешна.\linebreak \textbf{Подстановка:} \{Model=``BMW-Y015'', Color=``Red'', Surname=Surname, City=City, Phone=Phone, Bank=Bank\} & Новое состояние резольвенты: hasCar(Surname, ``BMW-Y015'', ``Red'', \_), hasPhone(Surname, Phone, address(City, \_, \_, \_)), hasDeposit(Surname, Bank, \_, \_)\\
+		\hline 
+	\end{tabular}
+\end{table}
+		
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|p{1.2cm\small}|p{9cm\small}|p{5cm\small}|}
+		\hline
+		№ шага & Сравниваемые термы; результат; подстановка, если есть & Дальнейшие действия: прямой ход или откат (к чему приводит?)\\
+		\hline
+		13 & Сравнение:\linebreak hasCar(Surname, ``BMW-Y015'', ``Red'', \_) = hasCar(``Balashov'', ``Lada Vesta'', ``Black'', 507800). Унификация неуспешна (несовпадение термов) & Прямой ход, перех к следующему предложению\\
+		\hline
+		14 & Сравнение:\linebreak hasCar(Surname, ``BMW-Y015'', ``Red'', \_) = hasCar(``Balashov'', ``BMW-Y015'', ``Red'', 10000000). Унификация успешна.\linebreak \textbf{Подстановка:} \{Model=``BMW-Y015'', Color=``Red'', Surname=``Balashov'', City=City, Phone=Phone, Bank=Bank\} & Новое состояние резольвенты: hasPhone(``Balashov'', Phone, address(City, \_, \_, \_)), hasDeposit(``Balashov'', Bank, \_, \_)\\
+		\hline
+		15 & Сравнение:\linebreak hasPhone(``Balashov'', Phone, address(City, \_, \_, \_)) = hasCar(``Balashov'', ``Lada Vesta'', ``Black'', 507800). Унификация неуспешна (несовпадение функторов) & Прямой ход, переход к следующему предложению\\
+		\hline
+		16-17 & ... & ...\\
+		\hline
+		18 & Сравнение:\linebreak hasPhone(``Balashov'', Phone, address(City, \_, \_, \_)) = hasPhone(``Balashov'', ``+79741632985'', address(``Moscow'', ``Baumanskaya'', 15, 21)). Унификация успешна.\linebreak \textbf{Подстановка:} \{Model=``BMW-Y015'', Color=``Red'', Surname=``Balashov'', City=``Moscow'', Phone=``+79741632985'', Bank=Bank\} & Новое состояние резольвенты: hasDeposit(``Balashov'', Bank, \_, \_)\\
+		\hline
+		19-21 & Унификация неуспешна (несовпадение функторов) & Прямой ход, переход к следующему предложению\\
+		\hline
+		22 & Сравнение:\linebreak hasDeposit(``Balashov'', Bank, \_, \_) = hasDeposit(``Balashov'', ``Home-credit'', ``5148465849516259'', 24318947). Унификация успешна.\linebreak \textbf{Подстановка:} \{Model=``BMW-Y015'', Color=``Red'', Surname=``Balashov'', City=``Moscow'', Phone=``+79741632985'', Bank=``Home-credit''\} & Новое состояние резольвенты: пуста\linebreak \textbf{Вывод:} Surname=``Balashov'', City=``Moscow'', Phone=``+79741632985'', Bank=``Home-credit''\linebreak Откат, следующее предложение, \textbf{новая подстановка:} \{Model=``BMW-Y015'', Color=``Red'', Surname=``Balashov'', City=``Moscow'', Phone=``+79741632985'', Bank=bank\}\\
+		\hline
+	\end{tabular}
+\end{table}
+
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|p{1.2cm\small}|p{9cm\small}|p{5cm\small}|}
+		\hline
+		№ шага & Сравниваемые термы; результат; подстановка, если есть & Дальнейшие действия: прямой ход или откат (к чему приводит?)\\
+		\hline
+		23 & Сравнение:\linebreak hasDeposit(``Balashov'', Bank, \_, \_) = hasDeposit(``Balashov'', ``VTB'', ``5670148746192648'', 478976). Унификация успешна.\linebreak \textbf{Подстановка:} \{Model=``BMW-Y015'', Color=``Red'', Surname=``Balashov'', City=``Moscow'', Phone=``+79741632985'', Bank=``VTB''\} & Новое состояние резольвенты: пуста\linebreak \textbf{Вывод:} Surname=``Balashov'', City=``Moscow'', Phone=``+79741632985'', Bank=``VTB''\linebreak Откат, следующее предложение, \textbf{новая подстановка:} \{Model=``BMW-Y015'', Color=``Red'', Surname=``Balashov'', City=``Moscow'', Phone=``+79741632985'', Bank=bank\}\\
+		\hline
+		24-30 & Унификация неуспешна & Откат, достижение конца БЗ, переход к следующему шагу относительно 18, \textbf{новая подстановка:} \{Model=``BMW-Y015'', Color=``Red'', Surname=``Balashov'', City=City, Phone=Phone, Bank=bank\}\\
+		\hline
+		... & ... & ...\\
+		\hline
+		31 & Сравнение:\linebreak hasCar(Surname, ``BMW-Y015'', ``Red'', \_) = hasCar(``Paraskun'', ``BMW-Y015'', ``Red'', 10000000). Унификация успешна.\linebreak \textbf{Подстановка:} \{Model=``BMW-Y015'', Color=``Red'', Surname=``Paraskun'', City=City, Phone=Phone, Bank=Bank\} & Новое состояние резольвенты: hasPhone(``Paraskun'', Phone, address(City, \_, \_, \_)), hasDeposit(``Paraskun'', Bank, \_, \_)\\
+		\hline
+		... & ... & ...\\
+		\hline
+		32 & Сравнение:\linebreak hasDeposit(``Paraskun'', Bank, \_, \_) = hasDeposit(``Paraskun'', ``Sberbank'', ``7193019871942510'', 100000). Унификация успешна.\linebreak \textbf{Подстановка:} \{Model=``BMW-Y015'', Color=``Red'', Surname=``Paraskun'', City=``Moscow'', Phone=``+79172641928'', Bank=``Sberbank''\} & Новое состояние резольвенты: пуста\linebreak Откат, следующее предложение, \textbf{новая подстановка:} \{Model=``BMW-Y015'', Color=``Red'', Surname=``Paraskun'', City=``Moscow'', Phone=``+79172641928'', Bank=Bank\}\\
+		\hline
+	\end{tabular}
+\end{table}
+
+\newpage\item Таблица унификация вопроса и заголовка подходящего правила (не зависит от порядка следования знаний в БЗ).
+
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|p{0.4cm\small}|p{4cm\small}|p{4.5cm\small}|p{5.5cm\small}|}
+		\hline
+		№ & Рез. ячейка & Рабочее поле & Стек\\
+		\hline
+		0 & & & getOnModelAndColor (``BMW-Y015'', ``Red'', Surname, City, Phone, Bank) = getOnModelAndColor(Model, Color, Surname, City, Phone, Bank)\\
+		\hline
+		1 & & getOnModelAndColor (``BMW-Y015'', ``Red'', Surname, City, Phone, Bank) = getOnModelAndColor (Model, Color, Surname, City, Phone, Bank) & ``BMW-Y015''=Model, ``Red''=Color, Surname=Surname, City=City, Phone=Phone, Bank=Bank\\
+		\hline
+		2 & Model = ``BMW-Y015'' & Model = ``BMW-Y015'' & ``Red''=Color, Surname=Surname, City=City, Phone=Phone, Bank=Bank\\
+		\hline
+		3 & Model = ``BMW-Y015'', Color = ``Red'' & Color = ``Red'' & Surname=Surname, City=City, Phone=Phone, Bank=Bank\\
+		\hline
+		4 & Model = ``BMW-Y015'', Color = ``Red'', Surname = Surname & Surname = Surname & City=City, Phone=Phone, Bank=Bank\\
+		\hline
+		5 & Model = ``BMW-Y015'', Color = ``Red'', Surname = Surname, City = City & City = City & Phone=Phone, Bank=Bank\\
+		\hline
+		6 & Model = ``BMW-Y015'', Color = ``Red'', Surname = Surname, City = City, Phone = Phone & Phone = Phone & Bank=Bank\\
+		\hline
+		7 & Model = ``BMW-Y015'', Color = ``Red'', Surname = Surname, City = City, Phone = Phone, Bank = Bank & Bank = Bank & \\
+		\hline
+		& $\theta$ = \{Model = ``BMW-Y015'', Color = ``Red'', Surname = Surname, City = City, Phone = Phone, Bank = Bank\} & & \\
+		\hline
+	\end{tabular}
+\end{table}
+
+\end{enumerate}
+
+\end{document}
